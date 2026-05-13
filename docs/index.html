@@ -6,7 +6,9 @@
 <title>SKY STRIKER // ROZE / ZEKE RELAY</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Major+Mono+Display&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
+<link rel="dns-prefetch" href="//raw.githubusercontent.com">
+<link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Chakra+Petch:wght@500;600&family=JetBrains+Mono:wght@400;500&family=Major+Mono+Display&display=swap" rel="stylesheet">
 <style>
 :root {
   --void: #050002;
@@ -1202,7 +1204,30 @@ async function fetchCipherFromUrl(rawInput) {
     }
   }
   if (!resp.ok) throw new Error(`HTTP ${resp.status} — ${resp.statusText || 'request failed'}`);
-  const text = (await resp.text()).trim();
+
+  // Stream the body and emit a live byte counter. Multi-megabyte ciphers over
+  // mobile networks can take 10–30s; a frozen "fetching" looks broken even
+  // when it isn't. Same total time, much better perceived responsiveness.
+  const total = +resp.headers.get('content-length') || 0;
+  const reader = resp.body.getReader();
+  const chunks = [];
+  let received = 0;
+  let lastTick = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.length;
+    const now = performance.now();
+    if (now - lastTick > 80) { // throttle DOM writes to ~12fps
+      setUrlStatus(`pulling ${fmtBytes(received)}${total ? ' / ' + fmtBytes(total) : ''}…`, 'busy');
+      lastTick = now;
+    }
+  }
+  const all = new Uint8Array(received);
+  let off = 0;
+  for (const c of chunks) { all.set(c, off); off += c.length; }
+  const text = new TextDecoder().decode(all).trim();
   if (!text) throw new Error('Fetched body was empty.');
   return { text, finalUrl: final, rewrote, viaProxy };
 }
