@@ -1050,6 +1050,43 @@ function b64ToBytes(b64) {
   return out;
 }
 
+/* ====== CIPHER CACHE ======
+   The textarea is only a UI surface. The real ciphertext (potentially 100+ MB
+   of base64) lives in these module-level variables so Copy/Save/Decrypt can
+   work on the full string without ever asking the textarea to render it.
+*/
+let fullCipher = '';   // last sealed transmission (encode side)
+let fullCipherIn = ''; // currently-loaded cipher for decryption (decode side)
+
+/* Decide what the user sees in the textarea after a large cipher is loaded.
+   The full string is already cached for Copy/Save/Decrypt — this controls the
+   visible preview only.
+
+   YOUR CONTRIBUTION:
+     - fullB64: the complete cipher string (could be millions of chars)
+     - byteCount: binary packet size if known (encode side passes this), or
+                  null on the decode side where we only know char count
+     - Return what the textarea should display. Anything more than ~50k chars
+       starts to lag, so keep it short. A head + tail slice with a separator
+       in the middle works well; so does a one-line summary.
+   Hints:
+     - fullB64.length is the total char count (use .toLocaleString() for commas)
+     - fmtBytes(byteCount) gives "4.2 MB" style output when byteCount != null
+     - Multi-line output is fine — '\n' renders as a newline in the textarea
+*/
+function buildOutputPreview(fullB64, byteCount) {
+  const total = fullB64.length;
+  // Small ciphers display in full — they render instantly and seeing the
+  // whole string is reassuring for short transmissions.
+  if (total <= 4000) return fullB64;
+  const head = fullB64.slice(0, 1200);
+  const tail = fullB64.slice(-1200);
+  const sizeLine = byteCount != null
+    ? `${total.toLocaleString()} chars · ${fmtBytes(byteCount)} packet`
+    : `${total.toLocaleString()} chars`;
+  return `${head}\n\n…   [ ${sizeLine} · full cipher cached in memory · use COPY / SAVE / BREACH ]   …\n\n${tail}`;
+}
+
 /* ====== ENCRYPT FLOW ====== */
 let encFile = null;
 const encDrop = $('#encDrop');
@@ -1100,8 +1137,9 @@ $('#btnEncrypt').addEventListener('click', async () => {
     const b64 = bytesToB64(packet);
     setProgress(progress, 100);
 
+    fullCipher = b64;
     $('#encOutput').classList.remove('hidden');
-    $('#encOutText').value = b64;
+    $('#encOutText').value = buildOutputPreview(fullCipher, packet.length);
     $('#encOutCount').textContent = `${b64.length.toLocaleString()} chars · ${fmtBytes(packet.length)} bin`;
     toast(`Sealed ${fmtBytes(packet.length)} packet.`, 'ok', 'sealed');
   } catch (err) {
@@ -1114,18 +1152,24 @@ $('#btnEncrypt').addEventListener('click', async () => {
 });
 
 $('#btnCopy').addEventListener('click', async () => {
+  if (!fullCipher) return;
   try {
-    await navigator.clipboard.writeText($('#encOutText').value);
+    await navigator.clipboard.writeText(fullCipher);
     toast('Cipher copied to clipboard.', 'ok', 'copy');
   } catch {
-    $('#encOutText').select();
+    // Legacy fallback needs the string in the DOM; temporarily inject, copy, restore preview.
+    const ta = $('#encOutText');
+    const prev = ta.value;
+    ta.value = fullCipher;
+    ta.select();
     document.execCommand('copy');
+    ta.value = prev;
     toast('Cipher copied (legacy).', 'ok', 'copy');
   }
 });
 
 $('#btnSaveTxt').addEventListener('click', () => {
-  const content = $('#encOutText').value;
+  const content = fullCipher;
   if (!content) return;
   const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const blob = new Blob([content], { type: 'text/plain' });
@@ -1145,6 +1189,7 @@ $('#btnEncReset').addEventListener('click', () => {
   $$('#encCipher input').forEach(i => i.value = '');
   $('#encOutput').classList.add('hidden');
   $('#encOutText').value = '';
+  fullCipher = '';
 });
 
 /* ====== URL FETCH (NEW IN V2) ======
@@ -1239,7 +1284,8 @@ $('#btnFetchUrl').addEventListener('click', async () => {
   btn.disabled = true;
   try {
     const { text, finalUrl, rewrote, viaProxy } = await fetchCipherFromUrl(raw);
-    $('#decInput').value = text;
+    fullCipherIn = text.trim();
+    $('#decInput').value = buildOutputPreview(fullCipherIn, null);
     const tags = [];
     if (rewrote) tags.push('rewrote');
     if (viaProxy) tags.push('via proxy');
@@ -1269,7 +1315,8 @@ decDrop.addEventListener('click', () => decFileInput.click());
 decFileInput.addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
   const text = await f.text();
-  $('#decInput').value = text.trim();
+  fullCipherIn = text.trim();
+  $('#decInput').value = buildOutputPreview(fullCipherIn, null);
   decDrop.classList.add('armed');
   setFileMeta(decMeta, f);
 });
@@ -1284,13 +1331,32 @@ decDrop.addEventListener('drop', async e => {
   e.preventDefault();
   const file = e.dataTransfer.files[0]; if (!file) return;
   const text = await file.text();
-  $('#decInput').value = text.trim();
+  fullCipherIn = text.trim();
+  $('#decInput').value = buildOutputPreview(fullCipherIn, null);
   decDrop.classList.add('armed');
   setFileMeta(decMeta, file);
 });
 
+/* Intercept large pastes — a 100 MB paste into the textarea would freeze
+   the page just as badly as the file-load path. Cache it, show the preview.
+   Small pastes fall through to the default behavior so manual typing/pasting
+   short ciphers stays natural. */
+$('#decInput').addEventListener('paste', e => {
+  const pasted = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+  if (pasted.length > 50000) {
+    e.preventDefault();
+    fullCipherIn = pasted.trim();
+    $('#decInput').value = buildOutputPreview(fullCipherIn, null);
+  }
+});
+
+/* Programmatic .value assignment doesn't fire 'input', but human typing does.
+   So this only fires when the user manually edits the textarea, at which point
+   the cached cipher is stale and must be discarded. */
+$('#decInput').addEventListener('input', () => { fullCipherIn = ''; });
+
 $('#btnDecrypt').addEventListener('click', async () => {
-  const b64 = $('#decInput').value.trim();
+  const b64 = fullCipherIn || $('#decInput').value.trim();
   if (!b64) return toast('No cipher input.', 'err', 'abort');
   const words = readCipherWords($('#decCipher'));
   const btn = $('#btnDecrypt');
@@ -1405,6 +1471,7 @@ $('#btnDecReset').addEventListener('click', () => {
   $('#decPreview').classList.add('hidden');
   if (lastDecrypted?.url) URL.revokeObjectURL(lastDecrypted.url);
   lastDecrypted = null;
+  fullCipherIn = '';
 });
 
 /* ====== STARTUP TOAST ====== */
