@@ -14,9 +14,11 @@ A single self-contained HTML page (Sky Striker // Roze relay) that encrypts any 
 
 Nothing leaves your browser tab during encryption or decryption. The crypto runs entirely client-side. The friend who sends you the ciphertext never sees your password, and the server hosting the ciphertext never sees your file.
 
-## Content note
+## Content policy
 
-The artwork shared through this tool is **AI-generated anime art**. Some pieces may contain **NSFW** elements, but everything is illustrated / drawn-style and is intended only for the friend group it was made for. Please do not redistribute outside that group.
+**Going forward, this site stores only SFW content.** The tool itself is general-purpose encryption — anyone can use it to seal any file locally on their own machine — but the `.ssae.txt` ciphertexts hosted in *this* repo will only ever be AI-generated **safe-for-work** anime artwork from now on. Earlier ciphertexts that may have contained NSFW material have been purged from the repo and its git history.
+
+Either way, nothing shared through this tool should be redistributed outside the friend group it was made for.
 
 ## How to use
 
@@ -73,9 +75,11 @@ The artwork shared through this tool is **AI-generated anime art**. Some pieces 
 
 整个加解密过程都在浏览器里完成，密码不会离开你的标签页。给你发密文的朋友看不到你的密码，托管密文的服务器也看不到你的原文件。
 
-## 内容说明
+## 内容守则
 
-通过这个工具分享的图片是 **AI 生成的二次元插画**。部分内容可能包含 **NSFW**（不适合工作场所观看）元素，但全部都是动漫风格的绘画，仅在本朋友圈内部欣赏，请不要向外传播。
+**从现在起，本仓库只存放 SFW（适合工作场所观看）内容。** 工具本身是通用的加密工具 —— 任何人都可以在自己的电脑上用它来加密任何文件 —— 但是托管在**本仓库**里的 `.ssae.txt` 密文，从此只会是 AI 生成的**纯洁向**二次元插画。早期可能包含 NSFW 内容的密文已经从仓库及 git 历史中彻底清除。
+
+无论如何，通过本工具分享的内容都仅限在本朋友圈内部欣赏，请不要向外传播。
 
 ## 使用方法
 
