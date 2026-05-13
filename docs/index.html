@@ -25,8 +25,20 @@
   --ash: #8a6e72;
   --ash-dim: #4a2e34;
   --steel: #1f1014;
-  --gold: #d9a04a;
   --ok: #5fb878;
+
+  /* SILVER / CHROME — Sky Striker Roze armor plating */
+  --silver: #c8ccd4;
+  --silver-bright: #f0f3f8;
+  --silver-dim: #6b7080;
+  --silver-soft: rgba(200, 204, 212, 0.18);
+  --chrome-grad: linear-gradient(180deg, #f0f3f8 0%, #c8ccd4 35%, #828794 62%, #5a5e69 100%);
+
+  /* GOLD — Zeke armor accents, used sparingly on the highest-impact moments */
+  --gold: #d9a04a;
+  --gold-bright: #f4c878;
+  --gold-deep: #a87c1e;
+  --gold-glow: rgba(244, 200, 120, 0.55);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -189,17 +201,28 @@ header.callsign::after {
   font-size: 26px;
   letter-spacing: 0.06em;
   line-height: 1.1;
-  color: var(--bone);
   text-transform: uppercase;
+  background: var(--chrome-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  filter: drop-shadow(0 0 4px rgba(200, 204, 212, 0.18)) drop-shadow(0 0 10px rgba(255, 26, 58, 0.18));
 }
 .brand h1 .sep {
-  color: var(--red);
   margin: 0 6px;
   font-family: 'Major Mono Display', monospace;
+  background: linear-gradient(180deg, #ff5566, #ff1a3a 50%, #a30016);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 .brand h1 .roze {
-  color: var(--red);
-  text-shadow: 0 0 16px rgba(255, 26, 58, 0.6);
+  background: linear-gradient(180deg, #ff8090 0%, #ff1a3a 50%, #a30016 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 12px rgba(255, 26, 58, 0.55));
 }
 .brand .subtitle {
   font-family: 'JetBrains Mono', monospace;
@@ -473,262 +496,220 @@ header.callsign::after {
 }
 
 /* ============================================================
-   TRANSMISSION READOUT — post-fetch HUD panel showing wire vs
-   decoded byte sizes as proportional bars, with an inflation
-   indicator between them. Echoes the page's existing corner-
-   accent + sweep aesthetic.
+   TRANSMISSION READOUT — slim post-fetch HUD strip.
+   A single compound bar shows wire bytes in red and the
+   inflation gap in gold-tinted diagonal hatching, so the
+   shape of the bar is the story. No panel, no boxes — just
+   armor seams and a precision needle.
+   Aesthetic: red / black / silver chrome / gold (Zeke) accents.
    ============================================================ */
 .xmit-readout {
   display: none;
   position: relative;
-  margin: 4px 0 22px;
-  padding: 18px 20px 14px;
-  background:
-    linear-gradient(180deg, rgba(20, 6, 10, 0.7), rgba(12, 3, 6, 0.85));
-  border: 1px solid var(--strut);
-  border-radius: 2px;
-  overflow: hidden;
-  box-shadow:
-    0 0 22px rgba(255, 26, 58, 0.15),
-    inset 0 1px 0 rgba(255, 26, 58, 0.18);
+  margin: 6px 0 18px;
 }
 .xmit-readout.visible {
   display: block;
-  animation: xmitReveal 0.55s cubic-bezier(0.2, 0.9, 0.25, 1.05);
+  animation: xmitReveal 0.5s cubic-bezier(0.2, 0.9, 0.25, 1.05);
 }
 @keyframes xmitReveal {
-  0%   { opacity: 0; transform: translateY(8px); filter: blur(4px); }
-  100% { opacity: 1; transform: translateY(0);   filter: blur(0); }
+  0%   { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
-/* armor-plate seam pattern echoes body::after but on a smaller scale */
+/* hairline armor seams above and below — the entire readout is
+   bracketed by two ~1px horizontal lines with a gold pip on each
+   end, like the underside of Zeke's chestplate. */
+.xmit-readout::before,
 .xmit-readout::after {
   content: '';
   position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(90deg, rgba(255, 26, 58, 0.05) 1px, transparent 1px);
-  background-size: 40px 4px;
-  mask-image: linear-gradient(90deg, transparent, black 30%, black 70%, transparent);
-  pointer-events: none;
-}
-/* sweeping shimmer that runs once when the panel appears */
-.xmit-readout.visible::before {
-  content: '';
-  position: absolute;
-  inset: 0;
+  left: 0; right: 0;
+  height: 1px;
   background: linear-gradient(
-    115deg,
+    90deg,
     transparent 0%,
-    rgba(255, 85, 102, 0.0) 30%,
-    rgba(255, 85, 102, 0.18) 50%,
-    rgba(255, 85, 102, 0.0) 70%,
+    var(--gold-deep) 6%,
+    var(--strut) 12%,
+    var(--strut) 88%,
+    var(--gold-deep) 94%,
     transparent 100%
   );
-  transform: translateX(-110%);
-  animation: xmitShimmer 1.4s cubic-bezier(0.2, 0.9, 0.3, 1) 0.1s;
   pointer-events: none;
 }
-@keyframes xmitShimmer {
-  0%   { transform: translateX(-110%); opacity: 0; }
-  20%  { opacity: 1; }
-  100% { transform: translateX(110%); opacity: 0; }
-}
+.xmit-readout::before { top: 0; }
+.xmit-readout::after  { bottom: 0; }
 
-/* corner accents — mirror .corner-tr / .corner-br elsewhere */
-.xmit-corner {
-  position: absolute;
-  width: 14px; height: 14px;
-  border: 1.5px solid var(--red);
-  pointer-events: none;
-  box-shadow: 0 0 6px var(--red);
-}
-.xmit-corner.tl { top: 6px;    left: 6px;    border-right: none; border-bottom: none; }
-.xmit-corner.br { bottom: 6px; right: 6px;   border-left: none;  border-top: none; }
-
-.xmit-header {
-  position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 14px;
-  margin-bottom: 16px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  z-index: 2;
-}
-.xmit-title {
-  color: var(--ember-glow);
-  text-shadow: 0 0 6px rgba(255, 26, 58, 0.6);
-}
-.xmit-chars {
-  color: var(--bone);
-  font-size: 12px;
-  text-shadow: 0 0 6px var(--red);
-}
-
-.xmit-bar-row {
-  position: relative;
+.xmit-strip {
   display: grid;
-  grid-template-columns: 56px 1fr 80px;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 12px;
-  margin: 8px 0;
-  z-index: 2;
+  gap: 16px;
+  padding: 10px 2px 8px;
 }
-.xmit-bar-label {
+
+.xmit-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  letter-spacing: 0.22em;
-  color: var(--ash);
+  letter-spacing: 0.28em;
   text-transform: uppercase;
+  color: var(--silver);
 }
-.xmit-bar-row.data .xmit-bar-label { color: var(--ember-glow); }
+.xmit-tag .lozenge {
+  color: var(--gold-bright);
+  font-size: 11px;
+  text-shadow: 0 0 5px var(--gold-glow), 0 0 10px rgba(217, 160, 74, 0.35);
+  animation: lozengeBreathe 2.2s ease-in-out infinite;
+}
+@keyframes lozengeBreathe {
+  0%, 100% { opacity: 0.9; transform: rotate(0deg) scale(1); }
+  50%      { opacity: 1;   transform: rotate(180deg) scale(1.15); }
+}
 
-.xmit-bar-track {
+/* The bar: hex-clipped track with two stacked fills. */
+.xmit-bar {
   position: relative;
-  height: 12px;
-  background: rgba(58, 11, 20, 0.55);
-  border: 1px solid var(--ash-dim);
-  border-radius: 1px;
+  height: 6px;
+  background: rgba(58, 11, 20, 0.6);
+  clip-path: polygon(
+    4px 0,
+    calc(100% - 4px) 0,
+    100% 50%,
+    calc(100% - 4px) 100%,
+    4px 100%,
+    0 50%
+  );
   overflow: hidden;
 }
-/* faint tick-marks across the track at 10% intervals */
-.xmit-bar-track::before {
+.xmit-bar::before {
   content: '';
   position: absolute;
   inset: 0;
   background-image: repeating-linear-gradient(
     90deg,
     transparent 0,
-    transparent calc(10% - 1px),
-    rgba(255, 26, 58, 0.12) calc(10% - 1px),
-    rgba(255, 26, 58, 0.12) 10%
+    transparent calc(20% - 1px),
+    rgba(200, 204, 212, 0.10) calc(20% - 1px),
+    rgba(200, 204, 212, 0.10) 20%
   );
   pointer-events: none;
+  z-index: 3;
 }
-
-.xmit-bar-fill {
+.xmit-bar .seg-wire {
   position: absolute;
-  inset: 0 100% 0 0;
+  top: 0; bottom: 0; left: 0;
+  width: 0;
   background: linear-gradient(
     90deg,
     var(--red-deep) 0%,
-    var(--red) 65%,
+    var(--red) 70%,
     var(--ember) 100%
   );
-  box-shadow:
-    0 0 10px var(--red),
-    inset 0 0 6px rgba(255, 85, 102, 0.45);
-  transition: right 0.95s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 8px var(--red);
+  transition: width 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 2;
 }
-.xmit-bar-fill.wire {
-  background: linear-gradient(
-    90deg,
-    rgba(95, 0, 12, 0.85) 0%,
-    var(--red-deep) 100%
-  );
-  box-shadow: 0 0 6px rgba(163, 0, 22, 0.6);
-}
-/* bright leading edge that travels with the bar */
-.xmit-bar-fill::after {
-  content: '';
+.xmit-bar .seg-inflate {
   position: absolute;
-  top: -2px; bottom: -2px; right: -2px;
-  width: 4px;
-  background: var(--ember-glow);
-  filter: blur(2px);
-  opacity: 0.85;
+  top: 0; bottom: 0; left: 0;
+  width: 0;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(217, 160, 74, 0.32) 0,
+    rgba(217, 160, 74, 0.32) 2px,
+    rgba(244, 200, 120, 0.85) 2px,
+    rgba(244, 200, 120, 0.85) 4px
+  );
+  box-shadow: 0 0 6px var(--gold-glow);
+  transition: width 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.12s,
+              left  0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.12s;
+  z-index: 1;
+  animation: inflateHatchDrift 14s linear infinite;
+}
+@keyframes inflateHatchDrift {
+  0%   { background-position: 0 0; }
+  100% { background-position: 60px 0; }
 }
 
-.xmit-bar-value {
+/* Ratio cluster on the right — gold-on-black, sparse */
+.xmit-ratio {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: var(--bone);
-  text-align: right;
 }
-.xmit-bar-row.data .xmit-bar-value {
-  font-size: 12px;
-  text-shadow: 0 0 6px var(--red);
-}
-
-/* INFLATION INDICATOR between the two bars */
-.xmit-inflate {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin: 6px 0 6px 68px;
-  font-family: 'JetBrains Mono', monospace;
+.xmit-ratio .x {
   font-size: 10px;
-  letter-spacing: 0.22em;
-  color: var(--ember-glow);
-  text-transform: uppercase;
-  opacity: 0;
-  animation: xmitInflateIn 0.5s 0.55s ease forwards;
-  z-index: 2;
+  color: var(--gold);
+  letter-spacing: 0;
 }
-@keyframes xmitInflateIn {
-  0%   { opacity: 0; transform: translateY(-4px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-.xmit-inflate .arrows {
-  color: var(--red);
-  display: inline-block;
-  font-size: 13px;
-  letter-spacing: 0.1em;
-  animation: xmitArrows 1.3s ease-in-out infinite;
-}
-@keyframes xmitArrows {
-  0%, 100% { transform: translateY(-1px); text-shadow: 0 0 4px var(--red); }
-  50%      { transform: translateY(3px);  text-shadow: 0 0 12px var(--red), 0 0 22px var(--ember); }
-}
-.xmit-inflate .ratio {
-  color: var(--bone);
+.xmit-ratio .num {
+  font-size: 14px;
   font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 0.1em;
-  text-shadow: 0 0 6px var(--red), 0 0 14px var(--ember);
-  animation: ratioPulse 1.5s ease-in-out infinite;
+  color: var(--gold-bright);
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 6px var(--gold-glow), 0 0 14px rgba(217, 160, 74, 0.3);
+  animation: ratioFlicker 2s ease-in-out infinite;
 }
-.xmit-inflate .algo {
-  padding: 2px 8px;
-  border: 1px solid var(--red-deep);
-  border-radius: 2px;
-  background: rgba(255, 26, 58, 0.08);
-  color: var(--ember-glow);
+@keyframes ratioFlicker {
+  0%, 92%, 100% { opacity: 1; }
+  93%, 95%      { opacity: 0.55; }
+  94%           { opacity: 1; }
+}
+.xmit-ratio .algo {
   font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--silver-dim);
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border: 1px solid var(--silver-dim);
+  border-radius: 1px;
 }
 
-.xmit-src {
-  position: relative;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--ash-dim);
+/* Stats line under the bar — comma-separated metrics in silver */
+.xmit-stats {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  color: var(--ash);
+  font-size: 9px;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  word-break: break-all;
-  z-index: 2;
+  color: var(--silver-dim);
+  margin: 2px 2px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 14px;
+  align-items: baseline;
 }
-.xmit-src .src-label {
-  color: var(--red);
-  margin-right: 10px;
-  text-shadow: 0 0 4px var(--red);
+.xmit-stats .num   { color: var(--silver); }
+.xmit-stats .gold  { color: var(--gold-bright); }
+.xmit-stats .label { color: var(--ash); margin-right: 4px; }
+.xmit-stats .slash { color: var(--red-deep); margin: 0 -8px; opacity: 0.7; }
+
+/* Source line — bottom, lowercase chrome-dim, gold caret prefix */
+.xmit-src {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--silver-dim);
+  margin: 4px 2px 0;
+  word-break: break-all;
+}
+.xmit-src .caret {
+  color: var(--gold);
+  margin-right: 6px;
+  font-weight: bold;
 }
 .xmit-src .src-proxy {
-  color: var(--gold);
+  color: var(--gold-bright);
   margin-left: 8px;
-  padding: 1px 6px;
-  border: 1px solid var(--gold);
-  border-radius: 2px;
-  font-size: 9px;
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 1px 4px;
+  border: 1px solid var(--gold-deep);
+  border-radius: 1px;
 }
 
 /* FILE DROP */
@@ -854,9 +835,14 @@ header.callsign::after {
 }
 .btn:hover {
   background: linear-gradient(180deg, var(--red-deep), var(--strut));
-  color: var(--bone);
-  box-shadow: 0 0 22px rgba(255, 26, 58, 0.5);
+  color: var(--silver-bright);
+  border-color: var(--gold-bright);
+  box-shadow:
+    0 0 22px rgba(255, 26, 58, 0.5),
+    0 0 8px var(--gold-glow),
+    inset 0 0 1px var(--gold-bright);
 }
+.btn:hover::before { color: var(--gold-bright); }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .btn.strike {
   border-color: var(--ember);
@@ -1291,15 +1277,23 @@ function readCipherWords(container) {
 }
 
 /* ====== KEY DERIVATION ======
-   IDENTICAL to v1: 6 words → trim → lowercase → join with U+241F (␟) → PBKDF2-SHA256
-   @ 310,000 iters with a 16-byte salt → 256-bit AES-GCM key.
-*/
+   v2 adds a deployment-baked PEPPER: a secret string compiled into this page
+   and appended to the 6-word password before PBKDF2. Effect:
+     - Old (v1, pepperless) packets no longer decrypt on this page.
+     - New packets only decrypt on a page carrying the same PEPPER.
+   The pepper is visible to anyone who views the page source — it is not a
+   security control against someone with access to this deployment, only
+   against people who only possess a .ssae.txt and the words. */
+const PEPPER = 'T1Qkt2SrLRarVs_sSs8IHCsmLrW3GvEb';
+
 function normalizeCipherWords(words) {
   const cleaned = words.map(w => w.trim().toLowerCase());
   if (cleaned.some(w => w.length === 0)) {
     throw new Error('All 6 cipher words are required.');
   }
-  return cleaned.join('␟');
+  // Pepper is joined as a 7th token with the same separator so the input
+  // can never collide with anything a user could legally type as word #7.
+  return cleaned.join('␟') + '␟' + PEPPER;
 }
 
 async function deriveKey(words, salt) {
@@ -1317,15 +1311,16 @@ async function deriveKey(words, salt) {
   );
 }
 
-/* ====== PACKET FORMAT (IDENTICAL TO V1 — guarantees cross-version compat) ======
+/* ====== PACKET FORMAT ======
+   v2 — pepper-bound, NOT backwards compatible with v1 by design.
    [ 4 bytes ] magic   "SSAE"
-   [ 1 byte  ] version 0x01
+   [ 1 byte  ] version 0x02
    [ 16 bytes] salt
    [ 12 bytes] iv
    [ remaining ] ciphertext (AES-GCM)
 */
 const MAGIC = new Uint8Array([0x53, 0x53, 0x41, 0x45]); // "SSAE"
-const VERSION = 0x01;
+const VERSION = 0x02;
 const SALT_LEN = 16;
 const IV_LEN = 12;
 
@@ -1642,11 +1637,12 @@ async function fetchCipherFromUrl(rawInput) {
   };
 }
 
-/* ====== TRANSMISSION READOUT RENDER ======
-   Builds the post-fetch HUD panel. The bar widths are proportional to the
-   larger of (wire, decoded) so inflation reads as a visible deficit on the
-   wire bar. A small minimum width keeps zero-byte edge cases from looking
-   like nothing rendered. */
+/* ====== TRANSMISSION READOUT RENDER (v2 — slim compound bar) ======
+   Two-segment bar:
+     [ red wire fill ] [ gold-hatch inflation fill ]
+   Where  wire + inflate = decoded total (always 100% of track when there's
+   any data). The shape of the bar IS the story — no labels needed.
+   When there's no inflation, only the red fill renders. */
 function renderTransmissionReadout(info) {
   const { wireBytes, decodedBytes, inflated, inflationRatio, encoding, charCount, finalUrl, viaProxy } = info;
   const root = $('#xmitReadout');
@@ -1656,73 +1652,83 @@ function renderTransmissionReadout(info) {
   while (root.firstChild) root.removeChild(root.firstChild);
   void root.offsetWidth;
 
-  // Decorative corners
-  root.appendChild(makeEl('span', { cls: 'xmit-corner tl' }));
-  root.appendChild(makeEl('span', { cls: 'xmit-corner br' }));
+  // ── Primary strip: tag / bar / ratio ──
+  const strip = makeEl('div', { cls: 'xmit-strip' });
 
-  // Header line
-  const header = makeEl('div', { cls: 'xmit-header' });
-  header.appendChild(makeEl('span', { cls: 'xmit-title', text: '// TRANSMISSION RECEIVED' }));
-  header.appendChild(makeEl('span', { cls: 'xmit-chars', text: `${charCount.toLocaleString()} chars` }));
-  root.appendChild(header);
+  const tag = makeEl('span', { cls: 'xmit-tag' });
+  tag.appendChild(makeEl('span', { cls: 'lozenge', text: '◆' }));
+  tag.appendChild(document.createTextNode('XMIT'));
+  strip.appendChild(tag);
 
-  // Determine bar scale — the larger size sets 100%
-  const ref = Math.max(wireBytes || 0, decodedBytes || 0) || 1;
-  const wirePct = wireBytes ? Math.max(2, (wireBytes / ref) * 100) : 0;
-  const dataPct = decodedBytes ? Math.max(2, (decodedBytes / ref) * 100) : 100;
+  const bar = makeEl('div', { cls: 'xmit-bar' });
+  const segWire    = makeEl('span', { cls: 'seg-wire' });
+  const segInflate = makeEl('span', { cls: 'seg-inflate' });
+  bar.appendChild(segInflate); // behind
+  bar.appendChild(segWire);    // in front
+  strip.appendChild(bar);
 
-  const wireFills = [];
-  const dataFills = [];
-
-  // Wire bar — only when we actually have a Content-Length AND saw inflation
-  if (inflated && wireBytes) {
-    const wireRow = makeEl('div', { cls: 'xmit-bar-row wire' });
-    wireRow.appendChild(makeEl('span', { cls: 'xmit-bar-label', text: 'WIRE' }));
-    const wireTrack = makeEl('div', { cls: 'xmit-bar-track' });
-    const wireFill = makeEl('div', { cls: 'xmit-bar-fill wire' });
-    wireTrack.appendChild(wireFill);
-    wireRow.appendChild(wireTrack);
-    wireRow.appendChild(makeEl('span', { cls: 'xmit-bar-value', text: fmtBytes(wireBytes) }));
-    root.appendChild(wireRow);
-    wireFills.push([wireFill, wirePct]);
-
-    // Inflation indicator between the bars
-    const inflate = makeEl('div', { cls: 'xmit-inflate' });
-    inflate.appendChild(makeEl('span', { cls: 'arrows', text: '⇣⇣⇣' }));
-    inflate.appendChild(makeEl('span', { cls: 'ratio', text: '×' + inflationRatio }));
-    inflate.appendChild(makeEl('span', { cls: 'algo', text: encoding || 'inflate' }));
-    root.appendChild(inflate);
+  // Ratio cluster (only when inflated)
+  if (inflated) {
+    const ratio = makeEl('span', { cls: 'xmit-ratio' });
+    ratio.appendChild(makeEl('span', { cls: 'x', text: '×' }));
+    ratio.appendChild(makeEl('span', { cls: 'num', text: String(inflationRatio) }));
+    ratio.appendChild(makeEl('span', { cls: 'algo', text: encoding || 'inflate' }));
+    strip.appendChild(ratio);
+  } else {
+    // Empty cluster keeps the grid balanced
+    strip.appendChild(makeEl('span', { cls: 'xmit-ratio' }));
   }
+  root.appendChild(strip);
 
-  // Data bar — always shown
-  const dataRow = makeEl('div', { cls: 'xmit-bar-row data' });
-  dataRow.appendChild(makeEl('span', { cls: 'xmit-bar-label', text: 'DATA' }));
-  const dataTrack = makeEl('div', { cls: 'xmit-bar-track' });
-  const dataFill = makeEl('div', { cls: 'xmit-bar-fill' });
-  dataTrack.appendChild(dataFill);
-  dataRow.appendChild(dataTrack);
-  dataRow.appendChild(makeEl('span', { cls: 'xmit-bar-value', text: fmtBytes(decodedBytes) }));
-  root.appendChild(dataRow);
-  dataFills.push([dataFill, dataPct]);
+  // ── Stats line ──
+  const stats = makeEl('div', { cls: 'xmit-stats' });
+  const pushStat = (label, value, valueCls = 'num') => {
+    const wrap = makeEl('span');
+    wrap.appendChild(makeEl('span', { cls: 'label', text: label }));
+    wrap.appendChild(makeEl('span', { cls: valueCls, text: value }));
+    stats.appendChild(wrap);
+  };
+  if (inflated && wireBytes) pushStat('wire', fmtBytes(wireBytes));
+  pushStat('data', fmtBytes(decodedBytes));
+  pushStat('chars', charCount.toLocaleString());
+  if (inflated) {
+    const enc = makeEl('span');
+    enc.appendChild(makeEl('span', { cls: 'label', text: 'via' }));
+    enc.appendChild(makeEl('span', { cls: 'gold', text: encoding || 'inflate' }));
+    stats.appendChild(enc);
+  }
+  root.appendChild(stats);
 
-  // Source line
+  // ── Source line ──
   const src = makeEl('div', { cls: 'xmit-src' });
-  src.appendChild(makeEl('span', { cls: 'src-label', text: 'SRC' }));
+  src.appendChild(makeEl('span', { cls: 'caret', text: '▾' }));
   src.appendChild(document.createTextNode(finalUrl));
   if (viaProxy) src.appendChild(makeEl('span', { cls: 'src-proxy', text: 'via proxy' }));
   root.appendChild(src);
 
-  // Reveal — trigger CSS animation
+  // ── Bar fill geometry ──
+  // wire fills from 0 to wirePct, inflate fills from wirePct to 100%
+  // (or, if not inflated, wire fills to 100% and inflate stays at 0).
+  let wirePct, inflateStart, inflateWidth;
+  if (decodedBytes <= 0) {
+    wirePct = 0; inflateStart = 0; inflateWidth = 0;
+  } else if (inflated && wireBytes) {
+    wirePct = (wireBytes / decodedBytes) * 100;
+    inflateStart = wirePct;
+    inflateWidth = 100 - wirePct;
+  } else {
+    wirePct = 100; inflateStart = 100; inflateWidth = 0;
+  }
+
   root.classList.add('visible');
   root.setAttribute('aria-hidden', 'false');
 
-  // Kick off bar fills on the next frame. Two RAFs guarantee the browser
-  // has painted the 0%-width initial state before the transition target,
-  // so the fill animates from 0 → target instead of snapping.
+  // Two RAFs ensure the 0% initial state paints before the target widths,
+  // so the bar animates from empty rather than snapping to target.
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    for (const [el, pct] of [...wireFills, ...dataFills]) {
-      el.style.right = (100 - pct) + '%';
-    }
+    segWire.style.width = wirePct + '%';
+    segInflate.style.left = inflateStart + '%';
+    segInflate.style.width = inflateWidth + '%';
   }));
 }
 
@@ -1825,7 +1831,10 @@ $('#btnDecrypt').addEventListener('click', async () => {
     for (let i = 0; i < 4; i++) if (packet[i] !== MAGIC[i])
       throw new Error('Magic mismatch — not a Sky Striker packet.');
     const version = packet[4];
-    if (version !== VERSION) throw new Error(`Unsupported version 0x${version.toString(16)}.`);
+    if (version !== VERSION) {
+      if (version === 0x01) throw new Error('Legacy v1 packet — this build cannot decrypt pre-pepper transmissions.');
+      throw new Error(`Unsupported version 0x${version.toString(16)}.`);
+    }
     const salt = packet.subarray(5, 5 + SALT_LEN);
     const iv = packet.subarray(5 + SALT_LEN, 5 + SALT_LEN + IV_LEN);
     const cipher = packet.subarray(5 + SALT_LEN + IV_LEN);
