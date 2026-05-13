@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SKY STRIKER // ROZE / ZEKE RELAY</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Major+Mono+Display&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void: #050002;
+  --hull: #0c0306;
+  --plate: #14060a;
+  --strut: #3a0b14;
+  --red: #ff1a3a;
+  --red-deep: #a30016;
+  --red-soft: rgba(255, 26, 58, 0.12);
+  --ember: #ff5566;
+  --ember-glow: #ff8090;
+  --ember-soft: rgba(255, 85, 102, 0.08);
+  --bone: #f0dadc;
+  --ash: #8a6e72;
+  --ash-dim: #4a2e34;
+  --steel: #1f1014;
+  --gold: #d9a04a;
+  --ok: #5fb878;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--void);
+  color: var(--bone);
+  font-family: 'Chakra Petch', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* deep void atmosphere — almost pure black with a single arterial pull */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse at 12% -10%, rgba(255, 26, 58, 0.22), transparent 50%),
+    radial-gradient(ellipse at 90% 110%, rgba(163, 0, 22, 0.18), transparent 55%),
+    radial-gradient(ellipse at 50% 60%, rgba(58, 11, 20, 0.4), transparent 75%),
+    linear-gradient(180deg, var(--void), #02010100 60%, #000000);
+  z-index: -2;
+}
+/* armor-plate seam pattern — fine vertical lines like a mech hull */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(90deg, rgba(255, 26, 58, 0.035) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(255, 26, 58, 0.025) 1px, transparent 1px);
+  background-size: 80px 8px;
+  mask-image: radial-gradient(ellipse at 50% 40%, black 30%, transparent 78%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* falling embers — small angular sparks, not petals */
+.embers {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.embers span {
+  position: absolute;
+  width: 3px; height: 3px;
+  background: var(--red);
+  opacity: 0.5;
+  box-shadow: 0 0 6px var(--red), 0 0 14px var(--red-deep);
+  animation: fall 12s linear infinite;
+  transform: rotate(45deg);
+}
+.embers span:nth-child(1) { left: 6%;  top: -2%; animation-duration: 14s; animation-delay: -2s; }
+.embers span:nth-child(2) { left: 19%; top: -2%; animation-duration: 11s; animation-delay: -7s; transform: scale(0.6) rotate(45deg); }
+.embers span:nth-child(3) { left: 33%; top: -2%; animation-duration: 16s; animation-delay: -4s; transform: scale(1.4) rotate(45deg); }
+.embers span:nth-child(4) { left: 47%; top: -2%; animation-duration: 13s; animation-delay: -10s; }
+.embers span:nth-child(5) { left: 62%; top: -2%; animation-duration: 18s; animation-delay: -1s; transform: scale(0.8) rotate(45deg); }
+.embers span:nth-child(6) { left: 78%; top: -2%; animation-duration: 15s; animation-delay: -6s; }
+.embers span:nth-child(7) { left: 91%; top: -2%; animation-duration: 17s; animation-delay: -3s; transform: scale(1.1) rotate(45deg); }
+@keyframes fall {
+  0%   { transform: translate(0, 0) rotate(45deg);   opacity: 0; }
+  8%   { opacity: 0.55; }
+  92%  { opacity: 0.55; }
+  100% { transform: translate(8px, 110vh) rotate(45deg); opacity: 0; }
+}
+
+/* HUD scanlines — sparser, sharper red tint */
+.scanlines {
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0,
+    transparent 3px,
+    rgba(255, 26, 58, 0.022) 4px
+  );
+  pointer-events: none;
+  z-index: 100;
+  mix-blend-mode: screen;
+}
+.sweep {
+  position: fixed; left: 0; right: 0; height: 90px;
+  background: linear-gradient(180deg, transparent, rgba(255, 26, 58, 0.08), transparent);
+  pointer-events: none;
+  z-index: 99;
+  animation: sweep 7s linear infinite;
+}
+@keyframes sweep {
+  0%   { top: -90px; }
+  100% { top: 100vh; }
+}
+
+.frame {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+  position: relative;
+  z-index: 1;
+}
+
+/* HEADER */
+header.callsign {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 32px;
+  padding: 18px 0 26px;
+  border-bottom: 1px solid var(--strut);
+  margin-bottom: 28px;
+  position: relative;
+}
+header.callsign::after {
+  content: '';
+  position: absolute;
+  left: 0; bottom: -1px; height: 1px; width: 220px;
+  background: var(--red);
+  box-shadow: 0 0 14px var(--red);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+/* mech-plate glyph — hex armor with crossed blade slits and a red optic */
+.brand .glyph {
+  width: 54px; height: 54px;
+  position: relative;
+  flex-shrink: 0;
+}
+.brand .glyph .plate {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid var(--red-deep);
+  clip-path: polygon(50% 0, 100% 28%, 100% 72%, 50% 100%, 0 72%, 0 28%);
+  background: linear-gradient(180deg, #1a0509, #060102);
+}
+.brand .glyph .slit {
+  position: absolute;
+  left: 12%; right: 12%;
+  top: 47%; height: 6%;
+  background: var(--red);
+  box-shadow: 0 0 10px var(--red), 0 0 22px var(--ember-glow);
+  animation: visor 3.4s ease-in-out infinite;
+}
+.brand .glyph .blade1, .brand .glyph .blade2 {
+  position: absolute;
+  inset: 14%;
+  border: 1px solid var(--red);
+  opacity: 0.55;
+}
+.brand .glyph .blade1 { clip-path: polygon(0 50%, 100% 0, 100% 4%, 0 54%); }
+.brand .glyph .blade2 { clip-path: polygon(100% 50%, 0 0, 0 4%, 100% 54%); }
+@keyframes visor {
+  0%, 100% { opacity: 0.6; transform: scaleX(1); }
+  50% { opacity: 1; transform: scaleX(1.05); }
+}
+
+.brand h1 {
+  font-family: 'Audiowide', sans-serif;
+  font-size: 26px;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  color: var(--bone);
+  text-transform: uppercase;
+}
+.brand h1 .sep {
+  color: var(--red);
+  margin: 0 6px;
+  font-family: 'Major Mono Display', monospace;
+}
+.brand h1 .roze {
+  color: var(--red);
+  text-shadow: 0 0 16px rgba(255, 26, 58, 0.6);
+}
+.brand .subtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.34em;
+  color: var(--ash);
+  text-transform: uppercase;
+  margin-top: 5px;
+}
+.brand .subtitle .arms { color: var(--red); }
+
+.status-block {
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--ash);
+  text-transform: uppercase;
+  line-height: 1.8;
+}
+.status-block .led {
+  display: inline-block;
+  width: 7px; height: 7px;
+  background: var(--ok);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--ok);
+  margin-right: 6px;
+  animation: blink 1.6s ease-in-out infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.32; }
+}
+.status-block .row strong { color: var(--red); font-weight: 500; }
+
+/* TAB SWITCHER */
+.tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 0;
+  position: relative;
+}
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--strut);
+  border-bottom: none;
+  color: var(--ash);
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.36em;
+  font-weight: 600;
+  padding: 18px 24px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.25s ease;
+  position: relative;
+  clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+  margin-right: -10px;
+}
+.tab-btn:last-child {
+  margin-right: 0;
+  margin-left: -10px;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 100%, 12px 100%);
+}
+.tab-btn .idx {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--ash-dim);
+  display: block;
+  margin-bottom: 2px;
+  letter-spacing: 0.2em;
+}
+.tab-btn:hover { color: var(--bone); background: var(--red-soft); }
+.tab-btn.active {
+  color: var(--red);
+  background: linear-gradient(180deg, rgba(255, 26, 58, 0.22), transparent);
+  border-color: var(--red);
+  box-shadow: 0 0 20px rgba(255, 26, 58, 0.3), inset 0 1px 0 var(--red);
+}
+.tab-btn.active .idx { color: var(--ember); }
+
+/* PANEL */
+.panel {
+  background: linear-gradient(180deg, var(--plate), var(--hull));
+  border: 1px solid var(--strut);
+  padding: 36px 32px 32px;
+  position: relative;
+  display: none;
+  animation: panelIn 0.45s ease;
+}
+.panel.active { display: block; }
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(8px); filter: blur(4px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+/* corner brackets — sharp red, single corner crimson */
+.panel::before, .panel::after,
+.panel > .corner-tr, .panel > .corner-br {
+  content: '';
+  position: absolute;
+  width: 20px; height: 20px;
+  border: 1.5px solid var(--red);
+  pointer-events: none;
+}
+.panel::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+.panel::after  { top: -1px; right: -1px; border-left: none; border-bottom: none; }
+.panel > .corner-tr { bottom: -1px; left: -1px; border-right: none; border-top: none; }
+.panel > .corner-br { bottom: -1px; right: -1px; border-left: none; border-top: none; border-color: var(--ember); }
+
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.36em;
+  color: var(--ash);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.section-label::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--red);
+  box-shadow: 0 0 8px var(--red);
+}
+.section-label::after {
+  content: '';
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--strut), transparent);
+}
+
+/* URL ROW — new in v2 */
+.url-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+  align-items: stretch;
+}
+.url-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--hull);
+  border: 1px solid var(--strut);
+  color: var(--bone);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  padding: 14px 16px;
+  outline: none;
+  transition: all 0.2s ease;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+.url-row input:focus {
+  border-color: var(--red);
+  background: var(--plate);
+  box-shadow: 0 0 14px rgba(255, 26, 58, 0.3);
+}
+.url-row input::placeholder { color: var(--ash-dim); }
+/* the fetch button — sized explicitly so flex can't collapse it past clip-path */
+.url-row .fetch-btn {
+  flex: 0 0 auto;
+  min-width: 140px;
+  padding: 0 26px;
+  background: linear-gradient(180deg, var(--strut), var(--plate));
+  border: 1px solid var(--red);
+  color: var(--red);
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.28em;
+  cursor: pointer;
+  text-transform: uppercase;
+  position: relative;
+  transition: all 0.2s ease;
+  clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+  white-space: nowrap;
+}
+.url-row .fetch-btn::before {
+  content: '▸ ';
+  color: var(--ember);
+}
+.url-row .fetch-btn:hover {
+  background: linear-gradient(180deg, var(--red-deep), var(--strut));
+  color: var(--bone);
+  box-shadow: 0 0 22px rgba(255, 26, 58, 0.5);
+}
+.url-row .fetch-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.url-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--ash);
+  text-transform: uppercase;
+  min-height: 14px;
+  margin-bottom: 18px;
+  word-break: break-all;
+}
+.url-status.ok    { color: var(--ok); }
+.url-status.err   { color: var(--red); }
+.url-status.busy  { color: var(--gold); }
+
+/* FILE DROP */
+.dropzone {
+  border: 1.5px dashed var(--strut);
+  background: rgba(20, 6, 10, 0.55);
+  padding: 38px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
+  margin-bottom: 28px;
+}
+.dropzone:hover, .dropzone.drag {
+  border-color: var(--red);
+  background: var(--red-soft);
+  box-shadow: inset 0 0 30px rgba(255, 26, 58, 0.12);
+}
+.dropzone .icon {
+  font-family: 'Major Mono Display', monospace;
+  font-size: 28px;
+  color: var(--red);
+  letter-spacing: 0.18em;
+  margin-bottom: 8px;
+  text-shadow: 0 0 14px rgba(255, 26, 58, 0.65);
+}
+.dropzone .prompt {
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone);
+}
+.dropzone .hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ash);
+  margin-top: 8px;
+  letter-spacing: 0.18em;
+}
+.dropzone.armed {
+  border-color: var(--ok);
+  border-style: solid;
+  background: rgba(95, 184, 120, 0.06);
+}
+.dropzone.armed .icon { color: var(--ok); text-shadow: 0 0 12px rgba(95, 184, 120, 0.6); }
+.file-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ash);
+  margin-top: 10px;
+  letter-spacing: 0.05em;
+  word-break: break-all;
+}
+.file-meta .v { color: var(--bone); }
+
+/* CIPHER GRID */
+.cipher-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+@media (max-width: 720px) {
+  .cipher-grid { grid-template-columns: repeat(3, 1fr); }
+}
+.cipher-slot { position: relative; }
+.cipher-slot .slot-idx {
+  position: absolute;
+  top: 6px; left: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--ash-dim);
+  letter-spacing: 0.2em;
+  pointer-events: none;
+}
+.cipher-slot input {
+  width: 100%;
+  background: var(--hull);
+  border: 1px solid var(--strut);
+  color: var(--bone);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  padding: 22px 10px 12px;
+  outline: none;
+  transition: all 0.2s ease;
+  text-align: center;
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+.cipher-slot input:focus {
+  border-color: var(--red);
+  background: var(--plate);
+  box-shadow: 0 0 12px rgba(255, 26, 58, 0.35);
+}
+.cipher-slot input:not(:placeholder-shown) {
+  color: var(--red);
+  border-color: var(--red-deep);
+}
+
+/* BUTTONS */
+.btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn {
+  flex: 1;
+  background: linear-gradient(180deg, var(--strut), var(--plate));
+  border: 1px solid var(--red);
+  color: var(--red);
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.34em;
+  padding: 16px 24px;
+  cursor: pointer;
+  text-transform: uppercase;
+  position: relative;
+  transition: all 0.2s ease;
+  clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  min-width: 200px;
+}
+.btn::before {
+  content: '▸ ';
+  color: var(--ember);
+}
+.btn:hover {
+  background: linear-gradient(180deg, var(--red-deep), var(--strut));
+  color: var(--bone);
+  box-shadow: 0 0 22px rgba(255, 26, 58, 0.5);
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn.strike {
+  border-color: var(--ember);
+  color: var(--ember-glow);
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 100%, 14px 100%);
+}
+.btn.strike::before { color: var(--red); }
+.btn.strike:hover {
+  background: linear-gradient(180deg, #5a0413, var(--plate));
+  color: var(--bone);
+  box-shadow: 0 0 22px rgba(255, 85, 102, 0.55);
+}
+.btn.ghost {
+  flex: 0;
+  border-color: var(--strut);
+  color: var(--ash);
+  background: transparent;
+  min-width: 130px;
+}
+.btn.ghost::before { color: var(--ash-dim); }
+.btn.ghost:hover { color: var(--bone); border-color: var(--bone); box-shadow: none; }
+
+/* OUTPUT BLOCKS */
+.output-area {
+  margin-top: 28px;
+  border: 1px solid var(--strut);
+  background: var(--hull);
+  padding: 18px;
+  position: relative;
+}
+.output-area.hidden { display: none; }
+.output-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ash);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.output-label .count { color: var(--red); }
+.cipher-textarea {
+  width: 100%;
+  background: var(--void);
+  border: 1px solid var(--strut);
+  color: var(--red);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  padding: 14px;
+  resize: vertical;
+  min-height: 140px;
+  outline: none;
+  word-break: break-all;
+}
+.cipher-textarea:focus { border-color: var(--red); }
+
+textarea.input-cipher {
+  width: 100%;
+  background: var(--hull);
+  border: 1px solid var(--strut);
+  color: var(--red);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 14px;
+  resize: vertical;
+  min-height: 120px;
+  outline: none;
+  margin-bottom: 14px;
+}
+textarea.input-cipher:focus { border-color: var(--red); }
+
+/* PREVIEW */
+.preview-area {
+  margin-top: 28px;
+  border: 1px solid var(--strut);
+  background: #000;
+  padding: 0;
+  position: relative;
+}
+.preview-area.hidden { display: none; }
+.preview-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--plate);
+  border-bottom: 1px solid var(--strut);
+  padding: 10px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.preview-bar .filename { color: var(--red); word-break: break-all; }
+.preview-bar .meta { color: var(--ash); white-space: nowrap; }
+.preview-canvas {
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: radial-gradient(ellipse at center, rgba(255, 26, 58, 0.07), transparent 70%), #000;
+}
+.preview-canvas img, .preview-canvas video {
+  max-width: 100%;
+  max-height: 60vh;
+  display: block;
+}
+.preview-canvas .fallback {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ash);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  line-height: 1.8;
+}
+.preview-canvas .fallback .big {
+  font-family: 'Major Mono Display', monospace;
+  font-size: 36px;
+  color: var(--red);
+  margin-bottom: 10px;
+  text-shadow: 0 0 14px rgba(255, 26, 58, 0.55);
+}
+
+/* TOAST */
+.toast-stack {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  display: flex; flex-direction: column; gap: 10px;
+  z-index: 200;
+  max-width: 360px;
+}
+.toast {
+  background: var(--plate);
+  border: 1px solid var(--red);
+  border-left-width: 4px;
+  padding: 12px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--bone);
+  box-shadow: 0 0 18px rgba(255, 26, 58, 0.28);
+  animation: toastIn 0.3s ease;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  word-break: break-word;
+}
+.toast.err   { border-color: var(--ember); box-shadow: 0 0 18px rgba(255, 85, 102, 0.32); }
+.toast.ok    { border-color: var(--ok); box-shadow: 0 0 18px rgba(95, 184, 120, 0.28); }
+.toast .label {
+  display: block;
+  font-size: 9px;
+  color: var(--ash);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.toast.err .label { color: var(--ember); }
+.toast.ok .label  { color: var(--ok); }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* PROGRESS */
+.progress {
+  height: 4px;
+  background: var(--strut);
+  position: relative;
+  overflow: hidden;
+  margin-top: 16px;
+}
+.progress.hidden { display: none; }
+.progress-fill {
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  background: linear-gradient(90deg, var(--red-deep), var(--red), var(--ember));
+  width: 0%;
+  transition: width 0.18s ease;
+  box-shadow: 0 0 10px var(--red);
+}
+
+/* FOOTER */
+footer.transmit {
+  margin-top: 32px;
+  padding-top: 18px;
+  border-top: 1px solid var(--strut);
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  color: var(--ash-dim);
+  text-transform: uppercase;
+}
+footer .codename { color: var(--ember); }
+footer .codename::before { content: '◢ '; color: var(--red); }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="scanlines"></div>
+<div class="sweep"></div>
+<div class="embers">
+  <span></span><span></span><span></span><span></span>
+  <span></span><span></span><span></span>
+</div>
+
+<div class="frame">
+
+  <header class="callsign">
+    <div class="brand">
+      <div class="glyph">
+        <span class="plate"></span>
+        <span class="blade1"></span>
+        <span class="blade2"></span>
+        <span class="slit"></span>
+      </div>
+      <div>
+        <h1>SKY STRIKER<span class="sep">//</span><span class="roze">ROZE</span></h1>
+        <div class="subtitle">arms loadout :: <span class="arms">zeke</span> · encrypted relay · aes-256-gcm</div>
+      </div>
+    </div>
+    <div class="status-block">
+      <div class="row"><span class="led"></span>OPTIC <strong>LOCKED</strong></div>
+      <div class="row">KDF :: <strong>PBKDF2 / 310K</strong></div>
+      <div class="row">CIPHER :: <strong>AES-256-GCM</strong></div>
+      <div class="row" id="clock">— :— :—</div>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="encode">
+      <span class="idx">// LOADOUT 01</span>SEAL
+    </button>
+    <button class="tab-btn" data-tab="decode">
+      <span class="idx">// LOADOUT 02</span>BREACH
+    </button>
+  </nav>
+
+  <!-- ENCODE PANEL -->
+  <section class="panel active" data-panel="encode">
+    <span class="corner-tr"></span><span class="corner-br"></span>
+
+    <div class="section-label">Payload Acquisition</div>
+    <div class="dropzone" id="encDrop">
+      <input type="file" id="encFile" hidden>
+      <div class="icon">◤━━◥</div>
+      <div class="prompt">Drop Target — Image / Video / Any File</div>
+      <div class="hint">click panel or drag onto surface · max ~80 mb</div>
+      <div class="file-meta hidden" id="encMeta"></div>
+    </div>
+
+    <div class="section-label">Cipher Lock :: 6 Word Authorization</div>
+    <div class="cipher-grid" id="encCipher"></div>
+
+    <div class="btn-row">
+      <button class="btn" id="btnEncrypt">Engage Seal</button>
+      <button class="btn ghost" id="btnEncReset">Reset</button>
+    </div>
+
+    <div class="progress hidden" id="encProgress"><div class="progress-fill"></div></div>
+
+    <div class="output-area hidden" id="encOutput">
+      <div class="output-label">
+        <span>// Sealed Transmission Packet</span>
+        <span class="count" id="encOutCount">0 chars</span>
+      </div>
+      <textarea class="cipher-textarea" id="encOutText" readonly spellcheck="false"></textarea>
+      <div class="btn-row" style="margin-top: 14px;">
+        <button class="btn ghost" id="btnCopy">Copy String</button>
+        <button class="btn ghost" id="btnSaveTxt">Save .ssae.txt</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- DECODE PANEL -->
+  <section class="panel" data-panel="decode">
+    <span class="corner-tr"></span><span class="corner-br"></span>
+
+    <div class="section-label">Remote Acquisition :: Pull from URL</div>
+    <div class="url-row">
+      <input type="url" id="decUrl" placeholder="paste github raw .txt url, gist, or any direct cipher link…" spellcheck="false" autocomplete="off">
+      <button class="fetch-btn" id="btnFetchUrl">Fetch</button>
+    </div>
+    <div class="url-status" id="urlStatus"></div>
+
+    <div class="section-label">Cipher Intake :: Paste String or Upload File</div>
+    <textarea class="input-cipher" id="decInput" placeholder="paste the sealed transmission string here…" spellcheck="false"></textarea>
+
+    <div class="dropzone" id="decDrop" style="padding: 22px;">
+      <input type="file" id="decFile" hidden accept=".txt,.ssae">
+      <div class="icon" style="font-size: 18px;">◤━━◥</div>
+      <div class="prompt" style="font-size: 12px;">Or drop the .ssae.txt payload</div>
+      <div class="file-meta hidden" id="decMeta"></div>
+    </div>
+
+    <div class="section-label">Cipher Lock :: 6 Word Authorization</div>
+    <div class="cipher-grid" id="decCipher"></div>
+
+    <div class="btn-row">
+      <button class="btn strike" id="btnDecrypt">Breach Transmission</button>
+      <button class="btn ghost" id="btnDecReset">Reset</button>
+    </div>
+
+    <div class="progress hidden" id="decProgress"><div class="progress-fill"></div></div>
+
+    <div class="preview-area hidden" id="decPreview">
+      <div class="preview-bar">
+        <span class="filename" id="prevName">payload.bin</span>
+        <span class="meta" id="prevMeta">— · —</span>
+      </div>
+      <div class="preview-canvas" id="prevCanvas"></div>
+      <div class="btn-row" style="margin: 14px; gap: 10px;">
+        <button class="btn" id="btnDownload">Download Recovered File</button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="transmit">
+    <div>Built browser-side · zero network · keys never leave your tab</div>
+    <div class="codename">CALLSIGN :: ROZE-09 // ZEKE</div>
+  </footer>
+
+</div>
+
+<div class="toast-stack" id="toasts"></div>
+
+<script>
+/* ====== UTIL ====== */
+const $ = (q, root = document) => root.querySelector(q);
+const $$ = (q, root = document) => [...root.querySelectorAll(q)];
+
+function makeEl(tag, opts = {}, ...children) {
+  const el = document.createElement(tag);
+  if (opts.cls) el.className = opts.cls;
+  if (opts.text != null) el.textContent = opts.text;
+  if (opts.attrs) for (const [k, v] of Object.entries(opts.attrs)) el.setAttribute(k, v);
+  if (opts.style) Object.assign(el.style, opts.style);
+  for (const c of children) if (c != null) el.appendChild(c);
+  return el;
+}
+
+function toast(msg, kind = 'info', label = 'log') {
+  const wrap = $('#toasts');
+  const el = makeEl('div', { cls: `toast ${kind}` },
+    makeEl('span', { cls: 'label', text: `// ${label}` }),
+    document.createTextNode(msg)
+  );
+  wrap.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(40px)'; }, 4200);
+  setTimeout(() => el.remove(), 4600);
+}
+
+function fmtBytes(n) {
+  if (n < 1024) return n + ' B';
+  if (n < 1024 ** 2) return (n / 1024).toFixed(1) + ' KB';
+  if (n < 1024 ** 3) return (n / 1024 / 1024).toFixed(2) + ' MB';
+  return (n / 1024 / 1024 / 1024).toFixed(2) + ' GB';
+}
+
+function setProgress(barEl, pct) {
+  const fill = barEl.querySelector('.progress-fill');
+  barEl.classList.remove('hidden');
+  fill.style.width = Math.max(0, Math.min(100, pct)) + '%';
+  if (pct >= 100) setTimeout(() => barEl.classList.add('hidden'), 400);
+}
+
+function setFileMeta(metaEl, file) {
+  metaEl.classList.remove('hidden');
+  while (metaEl.firstChild) metaEl.removeChild(metaEl.firstChild);
+  metaEl.appendChild(document.createTextNode('[ '));
+  metaEl.appendChild(makeEl('span', { cls: 'v', text: file.name }));
+  metaEl.appendChild(document.createTextNode(` · ${fmtBytes(file.size)}`));
+  if (file.type) metaEl.appendChild(document.createTextNode(` · ${file.type}`));
+  metaEl.appendChild(document.createTextNode(' ]'));
+}
+
+/* ====== CLOCK ====== */
+function tickClock() {
+  const d = new Date();
+  const t = d.toTimeString().slice(0, 8);
+  $('#clock').textContent = `T-MINUS ${t}`;
+}
+setInterval(tickClock, 1000); tickClock();
+
+/* ====== TABS ====== */
+$$('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
+  $$('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+  const target = btn.dataset.tab;
+  $$('.panel').forEach(p => p.classList.toggle('active', p.dataset.panel === target));
+}));
+
+/* ====== CIPHER GRID BUILDER ====== */
+function buildCipherGrid(container) {
+  for (let i = 1; i <= 6; i++) {
+    const idxLabel = makeEl('span', { cls: 'slot-idx', text: `W${String(i).padStart(2, '0')}` });
+    const input = makeEl('input', { attrs: {
+      type: 'text', maxlength: '32', placeholder: 'word',
+      autocomplete: 'off', spellcheck: 'false', 'data-idx': String(i)
+    }});
+    const slot = makeEl('div', { cls: 'cipher-slot' }, idxLabel, input);
+    container.appendChild(slot);
+  }
+  container.addEventListener('keydown', (e) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      const next = e.target.closest('.cipher-slot')?.nextElementSibling?.querySelector('input');
+      if (next) next.focus();
+    }
+  });
+  container.addEventListener('paste', (e) => {
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    const words = text.trim().split(/\s+/);
+    if (words.length === 6) {
+      e.preventDefault();
+      const inputs = container.querySelectorAll('input');
+      inputs.forEach((inp, i) => inp.value = words[i]);
+    }
+  });
+}
+buildCipherGrid($('#encCipher'));
+buildCipherGrid($('#decCipher'));
+
+function readCipherWords(container) {
+  return [...container.querySelectorAll('input')].map(i => i.value);
+}
+
+/* ====== KEY DERIVATION ======
+   IDENTICAL to v1: 6 words → trim → lowercase → join with U+241F (␟) → PBKDF2-SHA256
+   @ 310,000 iters with a 16-byte salt → 256-bit AES-GCM key.
+*/
+function normalizeCipherWords(words) {
+  const cleaned = words.map(w => w.trim().toLowerCase());
+  if (cleaned.some(w => w.length === 0)) {
+    throw new Error('All 6 cipher words are required.');
+  }
+  return cleaned.join('␟');
+}
+
+async function deriveKey(words, salt) {
+  const password = normalizeCipherWords(words);
+  const enc = new TextEncoder();
+  const material = await crypto.subtle.importKey(
+    'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 310000, hash: 'SHA-256' },
+    material,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+/* ====== PACKET FORMAT (IDENTICAL TO V1 — guarantees cross-version compat) ======
+   [ 4 bytes ] magic   "SSAE"
+   [ 1 byte  ] version 0x01
+   [ 16 bytes] salt
+   [ 12 bytes] iv
+   [ remaining ] ciphertext (AES-GCM)
+*/
+const MAGIC = new Uint8Array([0x53, 0x53, 0x41, 0x45]); // "SSAE"
+const VERSION = 0x01;
+const SALT_LEN = 16;
+const IV_LEN = 12;
+
+function concatBytes(...parts) {
+  const total = parts.reduce((s, p) => s + p.length, 0);
+  const out = new Uint8Array(total);
+  let o = 0;
+  for (const p of parts) { out.set(p, o); o += p.length; }
+  return out;
+}
+
+function packMetadata(filename, mime, fileBytes) {
+  const enc = new TextEncoder();
+  const fn = enc.encode(filename || 'payload.bin');
+  const mt = enc.encode(mime || 'application/octet-stream');
+  const fnLen = new Uint8Array(2);
+  new DataView(fnLen.buffer).setUint16(0, fn.length, false);
+  const mtLen = new Uint8Array(2);
+  new DataView(mtLen.buffer).setUint16(0, mt.length, false);
+  return concatBytes(fnLen, fn, mtLen, mt, fileBytes);
+}
+
+function unpackMetadata(plain) {
+  const dv = new DataView(plain.buffer, plain.byteOffset, plain.byteLength);
+  let off = 0;
+  const fnLen = dv.getUint16(off, false); off += 2;
+  const dec = new TextDecoder();
+  const filename = dec.decode(plain.subarray(off, off + fnLen)); off += fnLen;
+  const mtLen = dv.getUint16(off, false); off += 2;
+  const mime = dec.decode(plain.subarray(off, off + mtLen)); off += mtLen;
+  const fileBytes = plain.subarray(off);
+  return { filename, mime, fileBytes };
+}
+
+/* ====== BASE64 ====== */
+function bytesToB64(bytes) {
+  let bin = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
+  return btoa(bin);
+}
+function b64ToBytes(b64) {
+  const clean = b64.replace(/\s+/g, '');
+  const bin = atob(clean);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+/* ====== ENCRYPT FLOW ====== */
+let encFile = null;
+const encDrop = $('#encDrop');
+const encFileInput = $('#encFile');
+const encMeta = $('#encMeta');
+
+function armEncFile(file) {
+  encFile = file;
+  encDrop.classList.add('armed');
+  setFileMeta(encMeta, file);
+  toast(`Target locked: ${file.name}`, 'ok', 'lock');
+}
+encDrop.addEventListener('click', () => encFileInput.click());
+encFileInput.addEventListener('change', e => { if (e.target.files[0]) armEncFile(e.target.files[0]); });
+['dragover', 'dragenter'].forEach(ev => encDrop.addEventListener(ev, e => {
+  e.preventDefault(); encDrop.classList.add('drag');
+}));
+['dragleave', 'drop'].forEach(ev => encDrop.addEventListener(ev, e => {
+  if (ev === 'dragleave' && encDrop.contains(e.relatedTarget)) return;
+  encDrop.classList.remove('drag');
+}));
+encDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file) armEncFile(file);
+});
+
+$('#btnEncrypt').addEventListener('click', async () => {
+  if (!encFile) return toast('No file loaded.', 'err', 'abort');
+  const words = readCipherWords($('#encCipher'));
+  const btn = $('#btnEncrypt');
+  const progress = $('#encProgress');
+  btn.disabled = true;
+  try {
+    setProgress(progress, 10);
+    const salt = crypto.getRandomValues(new Uint8Array(SALT_LEN));
+    const iv = crypto.getRandomValues(new Uint8Array(IV_LEN));
+    setProgress(progress, 25);
+    const key = await deriveKey(words, salt);
+    setProgress(progress, 55);
+    const fileBytes = new Uint8Array(await encFile.arrayBuffer());
+    const plain = packMetadata(encFile.name, encFile.type, fileBytes);
+    setProgress(progress, 75);
+    const cipherBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plain);
+    const cipher = new Uint8Array(cipherBuf);
+    const versionByte = new Uint8Array([VERSION]);
+    const packet = concatBytes(MAGIC, versionByte, salt, iv, cipher);
+    const b64 = bytesToB64(packet);
+    setProgress(progress, 100);
+
+    $('#encOutput').classList.remove('hidden');
+    $('#encOutText').value = b64;
+    $('#encOutCount').textContent = `${b64.length.toLocaleString()} chars · ${fmtBytes(packet.length)} bin`;
+    toast(`Sealed ${fmtBytes(packet.length)} packet.`, 'ok', 'sealed');
+  } catch (err) {
+    console.error(err);
+    toast(err.message || 'Sealing failed.', 'err', 'abort');
+    progress.classList.add('hidden');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$('#btnCopy').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText($('#encOutText').value);
+    toast('Cipher copied to clipboard.', 'ok', 'copy');
+  } catch {
+    $('#encOutText').select();
+    document.execCommand('copy');
+    toast('Cipher copied (legacy).', 'ok', 'copy');
+  }
+});
+
+$('#btnSaveTxt').addEventListener('click', () => {
+  const content = $('#encOutText').value;
+  if (!content) return;
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const blob = new Blob([content], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `skystriker-${stamp}.ssae.txt`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast('Packet saved to disk.', 'ok', 'save');
+});
+
+$('#btnEncReset').addEventListener('click', () => {
+  encFile = null;
+  encFileInput.value = '';
+  encDrop.classList.remove('armed');
+  encMeta.classList.add('hidden');
+  $$('#encCipher input').forEach(i => i.value = '');
+  $('#encOutput').classList.add('hidden');
+  $('#encOutText').value = '';
+});
+
+/* ====== URL FETCH (NEW IN V2) ======
+   Auto-rewrites human-friendly URLs into raw-content equivalents (github
+   blob → raw, gist → raw, pastebin → raw) so a pasted address-bar URL works.
+
+   Two-stage fetch:
+     1. Direct  — works on desktop and on hosted https:// pages.
+     2. Proxy   — fallback through corsproxy.io for mobile / file:// pages
+                  where browsers block cross-origin fetch entirely. The proxy
+                  sees the URL being fetched but never the cipher words
+                  (those stay in this tab and decrypt locally), so the
+                  payload remains end-to-end safe — only metadata leaks.
+*/
+const CORS_PROXY = (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
+function normalizeFetchUrl(input) {
+  const url = input.trim();
+  const blob = url.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+)$/);
+  if (blob) return `https://raw.githubusercontent.com/${blob[1]}/${blob[2]}/${blob[3]}`;
+  const ghRaw = url.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/raw\/(.+)$/);
+  if (ghRaw) return `https://raw.githubusercontent.com/${ghRaw[1]}/${ghRaw[2]}/${ghRaw[3]}`;
+  const gist = url.match(/^https?:\/\/gist\.github\.com\/([^/]+)\/([a-f0-9]+)\/?$/i);
+  if (gist) return `https://gist.githubusercontent.com/${gist[1]}/${gist[2]}/raw`;
+  const pb = url.match(/^https?:\/\/pastebin\.com\/(?!raw\/)([a-zA-Z0-9]+)\/?$/);
+  if (pb) return `https://pastebin.com/raw/${pb[1]}`;
+  return url;
+}
+
+function setUrlStatus(msg, kind = '') {
+  const el = $('#urlStatus');
+  el.className = 'url-status' + (kind ? ' ' + kind : '');
+  while (el.firstChild) el.removeChild(el.firstChild);
+  if (msg) el.appendChild(document.createTextNode(msg));
+}
+
+async function fetchCipherFromUrl(rawInput) {
+  const final = normalizeFetchUrl(rawInput);
+  const rewrote = final !== rawInput.trim();
+  setUrlStatus(rewrote ? `rewrote → ${final}` : `fetching ${final}`, 'busy');
+
+  let resp, viaProxy = false;
+  // stage 1: direct fetch
+  try {
+    resp = await fetch(final, { redirect: 'follow', cache: 'no-store' });
+  } catch {
+    // stage 2: browser blocked the request (common on iOS Safari / mobile
+    // when the page is file://). Retry through a public CORS proxy.
+    setUrlStatus(`direct blocked · routing via corsproxy.io`, 'busy');
+    try {
+      resp = await fetch(CORS_PROXY(final), { redirect: 'follow', cache: 'no-store' });
+      viaProxy = true;
+    } catch {
+      if (location.protocol === 'file:') {
+        throw new Error('Mobile browsers block fetch from file:// pages. Host this HTML on GitHub Pages or Netlify Drop and open it from there, or paste the cipher manually.');
+      }
+      throw new Error('Fetch blocked on direct and via proxy. Check network, or paste the cipher manually.');
+    }
+  }
+  if (!resp.ok) throw new Error(`HTTP ${resp.status} — ${resp.statusText || 'request failed'}`);
+  const text = (await resp.text()).trim();
+  if (!text) throw new Error('Fetched body was empty.');
+  return { text, finalUrl: final, rewrote, viaProxy };
+}
+
+$('#btnFetchUrl').addEventListener('click', async () => {
+  const raw = $('#decUrl').value.trim();
+  if (!raw) { setUrlStatus('paste a url first', 'err'); return; }
+  const btn = $('#btnFetchUrl');
+  btn.disabled = true;
+  try {
+    const { text, finalUrl, rewrote, viaProxy } = await fetchCipherFromUrl(raw);
+    $('#decInput').value = text;
+    const tags = [];
+    if (rewrote) tags.push('rewrote');
+    if (viaProxy) tags.push('via proxy');
+    const tagStr = tags.length ? tags.join(' · ') + ' · ' : '';
+    setUrlStatus(`${tagStr}pulled ${text.length.toLocaleString()} chars from ${finalUrl}`, 'ok');
+    toast(`Pulled ${text.length.toLocaleString()} chars${viaProxy ? ' (via proxy)' : ''}.`, 'ok', 'fetch');
+  } catch (err) {
+    console.error(err);
+    setUrlStatus(err.message || 'fetch failed', 'err');
+    toast(err.message || 'Fetch failed.', 'err', 'abort');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$('#decUrl').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); $('#btnFetchUrl').click(); }
+});
+
+/* ====== DECRYPT FLOW ====== */
+const decDrop = $('#decDrop');
+const decFileInput = $('#decFile');
+const decMeta = $('#decMeta');
+let lastDecrypted = null;
+
+decDrop.addEventListener('click', () => decFileInput.click());
+decFileInput.addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  const text = await f.text();
+  $('#decInput').value = text.trim();
+  decDrop.classList.add('armed');
+  setFileMeta(decMeta, f);
+});
+['dragover', 'dragenter'].forEach(ev => decDrop.addEventListener(ev, e => {
+  e.preventDefault(); decDrop.classList.add('drag');
+}));
+['dragleave', 'drop'].forEach(ev => decDrop.addEventListener(ev, e => {
+  if (ev === 'dragleave' && decDrop.contains(e.relatedTarget)) return;
+  decDrop.classList.remove('drag');
+}));
+decDrop.addEventListener('drop', async e => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0]; if (!file) return;
+  const text = await file.text();
+  $('#decInput').value = text.trim();
+  decDrop.classList.add('armed');
+  setFileMeta(decMeta, file);
+});
+
+$('#btnDecrypt').addEventListener('click', async () => {
+  const b64 = $('#decInput').value.trim();
+  if (!b64) return toast('No cipher input.', 'err', 'abort');
+  const words = readCipherWords($('#decCipher'));
+  const btn = $('#btnDecrypt');
+  const progress = $('#decProgress');
+  btn.disabled = true;
+  try {
+    setProgress(progress, 12);
+    const packet = b64ToBytes(b64);
+    if (packet.length < 4 + 1 + SALT_LEN + IV_LEN + 16)
+      throw new Error('Packet too small or malformed.');
+    for (let i = 0; i < 4; i++) if (packet[i] !== MAGIC[i])
+      throw new Error('Magic mismatch — not a Sky Striker packet.');
+    const version = packet[4];
+    if (version !== VERSION) throw new Error(`Unsupported version 0x${version.toString(16)}.`);
+    const salt = packet.subarray(5, 5 + SALT_LEN);
+    const iv = packet.subarray(5 + SALT_LEN, 5 + SALT_LEN + IV_LEN);
+    const cipher = packet.subarray(5 + SALT_LEN + IV_LEN);
+
+    setProgress(progress, 35);
+    const key = await deriveKey(words, salt);
+    setProgress(progress, 60);
+
+    let plainBuf;
+    try {
+      plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipher);
+    } catch {
+      throw new Error('Breach failed. Wrong cipher words or tampered packet.');
+    }
+    const plain = new Uint8Array(plainBuf);
+    const { filename, mime, fileBytes } = unpackMetadata(plain);
+    setProgress(progress, 90);
+
+    if (lastDecrypted?.url) URL.revokeObjectURL(lastDecrypted.url);
+    const blob = new Blob([fileBytes], { type: mime || 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    lastDecrypted = { blob, filename, mime, url };
+    renderPreview(filename, mime, url, fileBytes.length);
+    setProgress(progress, 100);
+    toast(`Breached: ${filename}`, 'ok', 'extracted');
+  } catch (err) {
+    console.error(err);
+    toast(err.message || 'Breach failed.', 'err', 'abort');
+    progress.classList.add('hidden');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+function renderPreview(filename, mime, url, size) {
+  $('#decPreview').classList.remove('hidden');
+  $('#prevName').textContent = filename;
+  $('#prevMeta').textContent = `${mime || 'binary'} · ${fmtBytes(size)}`;
+  const canvas = $('#prevCanvas');
+  while (canvas.firstChild) canvas.removeChild(canvas.firstChild);
+
+  if (mime?.startsWith('image/')) {
+    const img = makeEl('img', { attrs: { src: url, alt: 'preview' } });
+    canvas.appendChild(img);
+  } else if (mime?.startsWith('video/')) {
+    const v = makeEl('video', { attrs: { src: url, controls: '', playsinline: '' } });
+    canvas.appendChild(v);
+  } else if (mime?.startsWith('audio/')) {
+    const a = makeEl('audio', { attrs: { src: url, controls: '' } });
+    canvas.appendChild(a);
+  } else if (mime?.startsWith('text/') || /\.(txt|md|json|csv|log)$/i.test(filename)) {
+    fetch(url).then(r => r.text()).then(t => {
+      const truncated = t.length > 50000;
+      const pre = makeEl('pre', {
+        text: t.slice(0, 50000) + (truncated ? '\n\n… [truncated]' : ''),
+        style: {
+          color: 'var(--bone)',
+          fontFamily: 'JetBrains Mono, monospace',
+          fontSize: '11px',
+          textAlign: 'left',
+          maxHeight: '60vh',
+          overflow: 'auto',
+          padding: '14px',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-all',
+          width: '100%'
+        }
+      });
+      canvas.appendChild(pre);
+    });
+  } else {
+    const big = makeEl('div', { cls: 'big', text: '◤ BINARY ◥' });
+    const fb = makeEl('div', { cls: 'fallback' }, big);
+    fb.appendChild(document.createTextNode('Preview unavailable for this MIME type.'));
+    fb.appendChild(makeEl('br'));
+    fb.appendChild(document.createTextNode('Click Download below to retrieve the file.'));
+    canvas.appendChild(fb);
+  }
+}
+
+$('#btnDownload').addEventListener('click', () => {
+  if (!lastDecrypted) return;
+  const a = document.createElement('a');
+  a.href = lastDecrypted.url;
+  a.download = lastDecrypted.filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  toast('Download initiated.', 'ok', 'deploy');
+});
+
+$('#btnDecReset').addEventListener('click', () => {
+  $('#decInput').value = '';
+  $('#decUrl').value = '';
+  setUrlStatus('');
+  decFileInput.value = '';
+  decDrop.classList.remove('armed');
+  decMeta.classList.add('hidden');
+  $$('#decCipher input').forEach(i => i.value = '');
+  $('#decPreview').classList.add('hidden');
+  if (lastDecrypted?.url) URL.revokeObjectURL(lastDecrypted.url);
+  lastDecrypted = null;
+});
+
+/* ====== STARTUP TOAST ====== */
+window.addEventListener('load', () => {
+  toast('Roze online. Zeke arms calibrated.', 'ok', 'boot');
+});
+</script>
+</body>
+</html>
