@@ -405,6 +405,73 @@ header.callsign::after {
 .url-status.err   { color: var(--red); }
 .url-status.busy  { color: var(--gold); }
 
+/* INFLATION BADGE — appears mid-fetch when received bytes exceed
+   Content-Length, meaning the server gzip/brotli-compressed the
+   wire but the browser handed us the decompressed stream. */
+.inflate-tag {
+  display: inline-block;
+  padding: 2px 9px;
+  margin-left: 8px;
+  border: 1px solid var(--red);
+  border-radius: 2px;
+  background: rgba(255, 26, 58, 0.10);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ember-glow);
+  position: relative;
+  overflow: hidden;
+  vertical-align: 1px;
+}
+.inflate-tag::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 85, 102, 0.55) 50%,
+    transparent 100%
+  );
+  transform: translateX(-60%);
+  animation: inflateSweep 1.5s linear infinite;
+  pointer-events: none;
+}
+@keyframes inflateSweep {
+  0%   { transform: translateX(-60%); }
+  100% { transform: translateX(320%); }
+}
+.inflate-tag .arrows {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  animation: arrowsExpand 1.5s ease-in-out infinite;
+}
+@keyframes arrowsExpand {
+  0%, 100% { letter-spacing: 0;     transform: scaleX(0.85); }
+  50%      { letter-spacing: 0.35em; transform: scaleX(1.25); }
+}
+.inflate-tag .ratio-x {
+  position: relative;
+  z-index: 1;
+  color: var(--bone);
+  font-weight: 600;
+  text-shadow: 0 0 5px var(--red), 0 0 12px var(--ember);
+  animation: ratioPulse 1.5s ease-in-out infinite;
+}
+@keyframes ratioPulse {
+  0%, 100% { text-shadow: 0 0 4px var(--red), 0 0 10px var(--ember-glow); }
+  50%      { text-shadow: 0 0 10px var(--red), 0 0 22px var(--ember), 0 0 32px var(--ember-glow); }
+}
+.inflate-tag .algo {
+  position: relative;
+  z-index: 1;
+  opacity: 0.85;
+  margin-left: 4px;
+}
+
 /* FILE DROP */
 .dropzone {
   border: 1.5px dashed var(--strut);
@@ -1253,11 +1320,42 @@ async function fetchCipherFromUrl(rawInput) {
   // Stream the body and emit a live byte counter. Multi-megabyte ciphers over
   // mobile networks can take 10–30s; a frozen "fetching" looks broken even
   // when it isn't. Same total time, much better perceived responsiveness.
+  //
+  // Content-Length is wire bytes (gzip/br compressed). resp.body.getReader()
+  // yields decompressed bytes. If the server compressed the response, the
+  // counter naturally exceeds the total — that's not a bug, it's inflation,
+  // and we render an animated badge to make it obvious when it's happening.
+  const encodingHdr = (resp.headers.get('content-encoding') || '').toLowerCase();
   const total = +resp.headers.get('content-length') || 0;
   const reader = resp.body.getReader();
   const chunks = [];
   let received = 0;
   let lastTick = 0;
+
+  const statusEl = $('#urlStatus');
+  const renderProgress = () => {
+    statusEl.className = 'url-status busy';
+    while (statusEl.firstChild) statusEl.removeChild(statusEl.firstChild);
+    statusEl.appendChild(document.createTextNode(
+      total
+        ? `pulling ${fmtBytes(received)} · wire ${fmtBytes(total)} `
+        : `pulling ${fmtBytes(received)} `
+    ));
+    // Trust the byte counts — even when Content-Encoding is stripped by the
+    // browser (Chromium does this for transparently-decompressed responses),
+    // received > total is the unambiguous signal that inflation occurred.
+    if (total && received > total * 1.02) {
+      const ratio = (received / total).toFixed(2);
+      const tag = makeEl('span', { cls: 'inflate-tag' });
+      tag.appendChild(makeEl('span', { cls: 'arrows', text: '⇢⇢' }));
+      tag.appendChild(document.createTextNode(' '));
+      tag.appendChild(makeEl('span', { cls: 'ratio-x', text: '×' + ratio }));
+      tag.appendChild(makeEl('span', { cls: 'algo', text: encodingHdr || 'inflate' }));
+      statusEl.appendChild(tag);
+    }
+    statusEl.appendChild(document.createTextNode('…'));
+  };
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -1265,7 +1363,7 @@ async function fetchCipherFromUrl(rawInput) {
     received += value.length;
     const now = performance.now();
     if (now - lastTick > 80) { // throttle DOM writes to ~12fps
-      setUrlStatus(`pulling ${fmtBytes(received)}${total ? ' / ' + fmtBytes(total) : ''}…`, 'busy');
+      renderProgress();
       lastTick = now;
     }
   }
@@ -1274,7 +1372,9 @@ async function fetchCipherFromUrl(rawInput) {
   for (const c of chunks) { all.set(c, off); off += c.length; }
   const text = new TextDecoder().decode(all).trim();
   if (!text) throw new Error('Fetched body was empty.');
-  return { text, finalUrl: final, rewrote, viaProxy };
+  const inflated = total > 0 && received > total * 1.02;
+  const inflationRatio = inflated ? +(received / total).toFixed(2) : 1;
+  return { text, finalUrl: final, rewrote, viaProxy, inflated, inflationRatio, encoding: encodingHdr };
 }
 
 $('#btnFetchUrl').addEventListener('click', async () => {
@@ -1283,15 +1383,16 @@ $('#btnFetchUrl').addEventListener('click', async () => {
   const btn = $('#btnFetchUrl');
   btn.disabled = true;
   try {
-    const { text, finalUrl, rewrote, viaProxy } = await fetchCipherFromUrl(raw);
+    const { text, finalUrl, rewrote, viaProxy, inflated, inflationRatio, encoding } = await fetchCipherFromUrl(raw);
     fullCipherIn = text.trim();
     $('#decInput').value = buildOutputPreview(fullCipherIn, null);
     const tags = [];
     if (rewrote) tags.push('rewrote');
     if (viaProxy) tags.push('via proxy');
+    if (inflated) tags.push(`${encoding || 'inflate'} ×${inflationRatio}`);
     const tagStr = tags.length ? tags.join(' · ') + ' · ' : '';
     setUrlStatus(`${tagStr}pulled ${text.length.toLocaleString()} chars from ${finalUrl}`, 'ok');
-    toast(`Pulled ${text.length.toLocaleString()} chars${viaProxy ? ' (via proxy)' : ''}.`, 'ok', 'fetch');
+    toast(`Pulled ${text.length.toLocaleString()} chars${viaProxy ? ' (via proxy)' : ''}${inflated ? ` · ${encoding || 'inflated'} ×${inflationRatio}` : ''}.`, 'ok', 'fetch');
   } catch (err) {
     console.error(err);
     setUrlStatus(err.message || 'fetch failed', 'err');
