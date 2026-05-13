@@ -472,6 +472,265 @@ header.callsign::after {
   margin-left: 4px;
 }
 
+/* ============================================================
+   TRANSMISSION READOUT — post-fetch HUD panel showing wire vs
+   decoded byte sizes as proportional bars, with an inflation
+   indicator between them. Echoes the page's existing corner-
+   accent + sweep aesthetic.
+   ============================================================ */
+.xmit-readout {
+  display: none;
+  position: relative;
+  margin: 4px 0 22px;
+  padding: 18px 20px 14px;
+  background:
+    linear-gradient(180deg, rgba(20, 6, 10, 0.7), rgba(12, 3, 6, 0.85));
+  border: 1px solid var(--strut);
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow:
+    0 0 22px rgba(255, 26, 58, 0.15),
+    inset 0 1px 0 rgba(255, 26, 58, 0.18);
+}
+.xmit-readout.visible {
+  display: block;
+  animation: xmitReveal 0.55s cubic-bezier(0.2, 0.9, 0.25, 1.05);
+}
+@keyframes xmitReveal {
+  0%   { opacity: 0; transform: translateY(8px); filter: blur(4px); }
+  100% { opacity: 1; transform: translateY(0);   filter: blur(0); }
+}
+
+/* armor-plate seam pattern echoes body::after but on a smaller scale */
+.xmit-readout::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(90deg, rgba(255, 26, 58, 0.05) 1px, transparent 1px);
+  background-size: 40px 4px;
+  mask-image: linear-gradient(90deg, transparent, black 30%, black 70%, transparent);
+  pointer-events: none;
+}
+/* sweeping shimmer that runs once when the panel appears */
+.xmit-readout.visible::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    rgba(255, 85, 102, 0.0) 30%,
+    rgba(255, 85, 102, 0.18) 50%,
+    rgba(255, 85, 102, 0.0) 70%,
+    transparent 100%
+  );
+  transform: translateX(-110%);
+  animation: xmitShimmer 1.4s cubic-bezier(0.2, 0.9, 0.3, 1) 0.1s;
+  pointer-events: none;
+}
+@keyframes xmitShimmer {
+  0%   { transform: translateX(-110%); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translateX(110%); opacity: 0; }
+}
+
+/* corner accents — mirror .corner-tr / .corner-br elsewhere */
+.xmit-corner {
+  position: absolute;
+  width: 14px; height: 14px;
+  border: 1.5px solid var(--red);
+  pointer-events: none;
+  box-shadow: 0 0 6px var(--red);
+}
+.xmit-corner.tl { top: 6px;    left: 6px;    border-right: none; border-bottom: none; }
+.xmit-corner.br { bottom: 6px; right: 6px;   border-left: none;  border-top: none; }
+
+.xmit-header {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  z-index: 2;
+}
+.xmit-title {
+  color: var(--ember-glow);
+  text-shadow: 0 0 6px rgba(255, 26, 58, 0.6);
+}
+.xmit-chars {
+  color: var(--bone);
+  font-size: 12px;
+  text-shadow: 0 0 6px var(--red);
+}
+
+.xmit-bar-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 56px 1fr 80px;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+  z-index: 2;
+}
+.xmit-bar-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--ash);
+  text-transform: uppercase;
+}
+.xmit-bar-row.data .xmit-bar-label { color: var(--ember-glow); }
+
+.xmit-bar-track {
+  position: relative;
+  height: 12px;
+  background: rgba(58, 11, 20, 0.55);
+  border: 1px solid var(--ash-dim);
+  border-radius: 1px;
+  overflow: hidden;
+}
+/* faint tick-marks across the track at 10% intervals */
+.xmit-bar-track::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent calc(10% - 1px),
+    rgba(255, 26, 58, 0.12) calc(10% - 1px),
+    rgba(255, 26, 58, 0.12) 10%
+  );
+  pointer-events: none;
+}
+
+.xmit-bar-fill {
+  position: absolute;
+  inset: 0 100% 0 0;
+  background: linear-gradient(
+    90deg,
+    var(--red-deep) 0%,
+    var(--red) 65%,
+    var(--ember) 100%
+  );
+  box-shadow:
+    0 0 10px var(--red),
+    inset 0 0 6px rgba(255, 85, 102, 0.45);
+  transition: right 0.95s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.xmit-bar-fill.wire {
+  background: linear-gradient(
+    90deg,
+    rgba(95, 0, 12, 0.85) 0%,
+    var(--red-deep) 100%
+  );
+  box-shadow: 0 0 6px rgba(163, 0, 22, 0.6);
+}
+/* bright leading edge that travels with the bar */
+.xmit-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: -2px; bottom: -2px; right: -2px;
+  width: 4px;
+  background: var(--ember-glow);
+  filter: blur(2px);
+  opacity: 0.85;
+}
+
+.xmit-bar-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--bone);
+  text-align: right;
+}
+.xmit-bar-row.data .xmit-bar-value {
+  font-size: 12px;
+  text-shadow: 0 0 6px var(--red);
+}
+
+/* INFLATION INDICATOR between the two bars */
+.xmit-inflate {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 6px 0 6px 68px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--ember-glow);
+  text-transform: uppercase;
+  opacity: 0;
+  animation: xmitInflateIn 0.5s 0.55s ease forwards;
+  z-index: 2;
+}
+@keyframes xmitInflateIn {
+  0%   { opacity: 0; transform: translateY(-4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.xmit-inflate .arrows {
+  color: var(--red);
+  display: inline-block;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  animation: xmitArrows 1.3s ease-in-out infinite;
+}
+@keyframes xmitArrows {
+  0%, 100% { transform: translateY(-1px); text-shadow: 0 0 4px var(--red); }
+  50%      { transform: translateY(3px);  text-shadow: 0 0 12px var(--red), 0 0 22px var(--ember); }
+}
+.xmit-inflate .ratio {
+  color: var(--bone);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 6px var(--red), 0 0 14px var(--ember);
+  animation: ratioPulse 1.5s ease-in-out infinite;
+}
+.xmit-inflate .algo {
+  padding: 2px 8px;
+  border: 1px solid var(--red-deep);
+  border-radius: 2px;
+  background: rgba(255, 26, 58, 0.08);
+  color: var(--ember-glow);
+  font-size: 9px;
+}
+
+.xmit-src {
+  position: relative;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--ash-dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--ash);
+  text-transform: uppercase;
+  word-break: break-all;
+  z-index: 2;
+}
+.xmit-src .src-label {
+  color: var(--red);
+  margin-right: 10px;
+  text-shadow: 0 0 4px var(--red);
+}
+.xmit-src .src-proxy {
+  color: var(--gold);
+  margin-left: 8px;
+  padding: 1px 6px;
+  border: 1px solid var(--gold);
+  border-radius: 2px;
+  font-size: 9px;
+}
+
 /* FILE DROP */
 .dropzone {
   border: 1.5px dashed var(--strut);
@@ -888,6 +1147,7 @@ footer .codename::before { content: '◢ '; color: var(--red); }
       <button class="fetch-btn" id="btnFetchUrl">Fetch</button>
     </div>
     <div class="url-status" id="urlStatus"></div>
+    <div class="xmit-readout" id="xmitReadout" aria-hidden="true"></div>
 
     <div class="section-label">Cipher Intake :: Paste String or Upload File</div>
     <textarea class="input-cipher" id="decInput" placeholder="paste the sealed transmission string here…" spellcheck="false"></textarea>
@@ -1374,7 +1634,96 @@ async function fetchCipherFromUrl(rawInput) {
   if (!text) throw new Error('Fetched body was empty.');
   const inflated = total > 0 && received > total * 1.02;
   const inflationRatio = inflated ? +(received / total).toFixed(2) : 1;
-  return { text, finalUrl: final, rewrote, viaProxy, inflated, inflationRatio, encoding: encodingHdr };
+  return {
+    text, finalUrl: final, rewrote, viaProxy,
+    inflated, inflationRatio, encoding: encodingHdr,
+    wireBytes: total,
+    decodedBytes: received,
+  };
+}
+
+/* ====== TRANSMISSION READOUT RENDER ======
+   Builds the post-fetch HUD panel. The bar widths are proportional to the
+   larger of (wire, decoded) so inflation reads as a visible deficit on the
+   wire bar. A small minimum width keeps zero-byte edge cases from looking
+   like nothing rendered. */
+function renderTransmissionReadout(info) {
+  const { wireBytes, decodedBytes, inflated, inflationRatio, encoding, charCount, finalUrl, viaProxy } = info;
+  const root = $('#xmitReadout');
+
+  // Restart the reveal animation if this is the second+ fetch in a row.
+  root.classList.remove('visible');
+  while (root.firstChild) root.removeChild(root.firstChild);
+  void root.offsetWidth;
+
+  // Decorative corners
+  root.appendChild(makeEl('span', { cls: 'xmit-corner tl' }));
+  root.appendChild(makeEl('span', { cls: 'xmit-corner br' }));
+
+  // Header line
+  const header = makeEl('div', { cls: 'xmit-header' });
+  header.appendChild(makeEl('span', { cls: 'xmit-title', text: '// TRANSMISSION RECEIVED' }));
+  header.appendChild(makeEl('span', { cls: 'xmit-chars', text: `${charCount.toLocaleString()} chars` }));
+  root.appendChild(header);
+
+  // Determine bar scale — the larger size sets 100%
+  const ref = Math.max(wireBytes || 0, decodedBytes || 0) || 1;
+  const wirePct = wireBytes ? Math.max(2, (wireBytes / ref) * 100) : 0;
+  const dataPct = decodedBytes ? Math.max(2, (decodedBytes / ref) * 100) : 100;
+
+  const wireFills = [];
+  const dataFills = [];
+
+  // Wire bar — only when we actually have a Content-Length AND saw inflation
+  if (inflated && wireBytes) {
+    const wireRow = makeEl('div', { cls: 'xmit-bar-row wire' });
+    wireRow.appendChild(makeEl('span', { cls: 'xmit-bar-label', text: 'WIRE' }));
+    const wireTrack = makeEl('div', { cls: 'xmit-bar-track' });
+    const wireFill = makeEl('div', { cls: 'xmit-bar-fill wire' });
+    wireTrack.appendChild(wireFill);
+    wireRow.appendChild(wireTrack);
+    wireRow.appendChild(makeEl('span', { cls: 'xmit-bar-value', text: fmtBytes(wireBytes) }));
+    root.appendChild(wireRow);
+    wireFills.push([wireFill, wirePct]);
+
+    // Inflation indicator between the bars
+    const inflate = makeEl('div', { cls: 'xmit-inflate' });
+    inflate.appendChild(makeEl('span', { cls: 'arrows', text: '⇣⇣⇣' }));
+    inflate.appendChild(makeEl('span', { cls: 'ratio', text: '×' + inflationRatio }));
+    inflate.appendChild(makeEl('span', { cls: 'algo', text: encoding || 'inflate' }));
+    root.appendChild(inflate);
+  }
+
+  // Data bar — always shown
+  const dataRow = makeEl('div', { cls: 'xmit-bar-row data' });
+  dataRow.appendChild(makeEl('span', { cls: 'xmit-bar-label', text: 'DATA' }));
+  const dataTrack = makeEl('div', { cls: 'xmit-bar-track' });
+  const dataFill = makeEl('div', { cls: 'xmit-bar-fill' });
+  dataTrack.appendChild(dataFill);
+  dataRow.appendChild(dataTrack);
+  dataRow.appendChild(makeEl('span', { cls: 'xmit-bar-value', text: fmtBytes(decodedBytes) }));
+  root.appendChild(dataRow);
+  dataFills.push([dataFill, dataPct]);
+
+  // Source line
+  const src = makeEl('div', { cls: 'xmit-src' });
+  src.appendChild(makeEl('span', { cls: 'src-label', text: 'SRC' }));
+  src.appendChild(document.createTextNode(finalUrl));
+  if (viaProxy) src.appendChild(makeEl('span', { cls: 'src-proxy', text: 'via proxy' }));
+  root.appendChild(src);
+
+  // Reveal — trigger CSS animation
+  root.classList.add('visible');
+  root.setAttribute('aria-hidden', 'false');
+
+  // Kick off bar fills on the next frame. Two RAFs guarantee the browser
+  // has painted the 0%-width initial state before the transition target,
+  // so the fill animates from 0 → target instead of snapping.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    for (const [el, pct] of [...wireFills, ...dataFills]) {
+      el.style.right = (100 - pct) + '%';
+    }
+  }));
 }
 
 $('#btnFetchUrl').addEventListener('click', async () => {
@@ -1383,7 +1732,8 @@ $('#btnFetchUrl').addEventListener('click', async () => {
   const btn = $('#btnFetchUrl');
   btn.disabled = true;
   try {
-    const { text, finalUrl, rewrote, viaProxy, inflated, inflationRatio, encoding } = await fetchCipherFromUrl(raw);
+    const result = await fetchCipherFromUrl(raw);
+    const { text, finalUrl, rewrote, viaProxy, inflated, inflationRatio, encoding, wireBytes, decodedBytes } = result;
     fullCipherIn = text.trim();
     $('#decInput').value = buildOutputPreview(fullCipherIn, null);
     const tags = [];
@@ -1392,6 +1742,10 @@ $('#btnFetchUrl').addEventListener('click', async () => {
     if (inflated) tags.push(`${encoding || 'inflate'} ×${inflationRatio}`);
     const tagStr = tags.length ? tags.join(' · ') + ' · ' : '';
     setUrlStatus(`${tagStr}pulled ${text.length.toLocaleString()} chars from ${finalUrl}`, 'ok');
+    renderTransmissionReadout({
+      wireBytes, decodedBytes, inflated, inflationRatio, encoding,
+      charCount: text.length, finalUrl, viaProxy,
+    });
     toast(`Pulled ${text.length.toLocaleString()} chars${viaProxy ? ' (via proxy)' : ''}${inflated ? ` · ${encoding || 'inflated'} ×${inflationRatio}` : ''}.`, 'ok', 'fetch');
   } catch (err) {
     console.error(err);
@@ -1565,6 +1919,8 @@ $('#btnDecReset').addEventListener('click', () => {
   $('#decInput').value = '';
   $('#decUrl').value = '';
   setUrlStatus('');
+  $('#xmitReadout').classList.remove('visible');
+  $('#xmitReadout').setAttribute('aria-hidden', 'true');
   decFileInput.value = '';
   decDrop.classList.remove('armed');
   decMeta.classList.add('hidden');
