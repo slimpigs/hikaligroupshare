@@ -1841,7 +1841,7 @@ footer .codename::before { content: '◢ '; color: var(--red); }
 
   <footer class="transmit">
     <div>Built browser-side · zero network · keys never leave your tab</div>
-    <div class="codename">CALLSIGN :: ROZE-09 // ZEKE</div>
+    <div class="codename" id="codename">CALLSIGN :: ROZE-09 // ZEKE</div>
   </footer>
 
 </div>
@@ -1904,12 +1904,12 @@ function setFileMeta(metaEl, file) {
    the pilot+arms text, persists to localStorage, and flashes a brief sweep
    to acknowledge the change. */
 const ACE_MODES = {
-  raye:    { pilot: 'RAYE', arms: 'raye' },
-  kagari:  { pilot: 'RAYE', arms: 'kagari' },
-  shizuku: { pilot: 'RAYE', arms: 'shizuku' },
-  hayate:  { pilot: 'RAYE', arms: 'hayate' },
-  roze:    { pilot: 'ROZE', arms: 'roze' },
-  zeke:    { pilot: 'ROZE', arms: 'zeke' },
+  raye:    { pilot: 'RAYE', arms: 'raye',    callsign: 'RAYE-01' },
+  kagari:  { pilot: 'RAYE', arms: 'kagari',  callsign: 'RAYE-01 // KAGARI' },
+  shizuku: { pilot: 'RAYE', arms: 'shizuku', callsign: 'RAYE-01 // SHIZUKU' },
+  hayate:  { pilot: 'RAYE', arms: 'hayate',  callsign: 'RAYE-01 // HAYATE' },
+  roze:    { pilot: 'ROZE', arms: 'roze',    callsign: 'ROZE-09' },
+  zeke:    { pilot: 'ROZE', arms: 'zeke',    callsign: 'ROZE-09 // ZEKE' },
 };
 const ACE_DEFAULT = 'zeke';
 const ACE_STORAGE_KEY = 'skystriker-theme';
@@ -1927,6 +1927,7 @@ function setAceMode(key, opts = {}) {
 
   $('#aceName').textContent = cfg.pilot;
   $('#armsName').textContent = cfg.arms;
+  $('#codename').textContent = `CALLSIGN :: ${cfg.callsign}`;
 
   $$('.ace-chip').forEach(c => {
     const isActive = c.dataset.pick === key;
