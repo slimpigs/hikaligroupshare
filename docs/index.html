@@ -1,4 +1,4 @@
-a<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -86,37 +86,37 @@ a<!DOCTYPE html>
 
 [data-theme="raye"] {
   /* Raye base form — committed reading of her actual card art:
-       deep navy pilot bodysuit (dark tones)
-       hot crimson uniform/visor (energy color)
-       silver-grey hair (chrome accent — NOT platinum, NOT white)
-       warm visor-gold (metal hint — not champagne or yellow)
-     The previous platinum-dominant attempt read as "generic light theme"
-     rather than the Sky Striker ace; this version commits to navy + crimson. */
-  --void: #02030c;
-  --hull: #060914;
-  --plate: #0c1120;
-  --strut: #1c2138;
-  --red: #ff2848;
-  --red-deep: #a8001f;
-  --red-soft: rgba(255, 40, 72, 0.14);
-  --ember: #ff7080;
-  --ember-glow: #ffa8b4;
-  --ember-soft: rgba(255, 112, 128, 0.10);
-  --bone: #dde2ec;
-  --ash: #6d7488;
-  --ash-dim: #232940;
-  --silver: #b8bdca;
-  --silver-bright: #d8dce8;
-  --silver-dim: #5a6078;
-  --silver-soft: rgba(184, 189, 202, 0.18);
-  --chrome-grad: linear-gradient(180deg, #d8dce8 0%, #b8bdca 35%, #6a708a 62%, #1c2138 100%);
-  --gold: #c89868;
-  --gold-bright: #e4b884;
-  --gold-deep: #886040;
-  --gold-glow: rgba(200, 152, 104, 0.42);
-  --shadow-r: rgba(255, 40, 72, 0.6);
-  --shadow-g: rgba(228, 184, 132, 0.42);
-  --shadow-h: rgba(255, 112, 128, 0.40);
+       light sky-blue bodysuit highlights (primary energy)
+       silver-white hair tones (chrome accent)
+       red ribbon flash on her uniform (accent only, NOT dominant)
+       cool warm-brass metal trim
+     The previous navy+crimson read as "military dark theme"; this version
+     commits to her sky-pilot identity — bright blue dominant. */
+  --void: #03080f;
+  --hull: #061220;
+  --plate: #0a1c32;
+  --strut: #1c3c64;
+  --red: #5cb8f8;
+  --red-deep: #1c5890;
+  --red-soft: rgba(92, 184, 248, 0.15);
+  --ember: #88d0ff;
+  --ember-glow: #c8e8ff;
+  --ember-soft: rgba(136, 208, 255, 0.10);
+  --bone: #e0eaf6;
+  --ash: #7888a0;
+  --ash-dim: #283c54;
+  --silver: #b8c8dc;
+  --silver-bright: #ecf2f8;
+  --silver-dim: #5c6c80;
+  --silver-soft: rgba(184, 200, 220, 0.20);
+  --chrome-grad: linear-gradient(180deg, #ecf2f8 0%, #b8c8dc 35%, #5c6c80 62%, #1c3c54 100%);
+  --gold: #d8b878;
+  --gold-bright: #f0d098;
+  --gold-deep: #886440;
+  --gold-glow: rgba(216, 184, 120, 0.45);
+  --shadow-r: rgba(92, 184, 248, 0.62);
+  --shadow-g: rgba(240, 208, 152, 0.42);
+  --shadow-h: rgba(136, 208, 255, 0.42);
 }
 
 [data-theme="kagari"] {
@@ -438,6 +438,147 @@ header.callsign::after {
   -webkit-background-clip: text;
   background-clip: text;
   filter: drop-shadow(0 0 5px var(--shadow-r));
+}
+
+/* ============================================================
+   Per-theme title gradients. The base .brand h1 gradient (red-
+   dominant, defined above) is the ZEKE default. Each other ace
+   mode overrides with a gradient shape unique to its identity:
+
+     RAYE     silver-dominant, crimson flash at bottom (pilot)
+     KAGARI   fire-cascade: cream → orange → fire-red → black
+     SHIZUKU  deep-water: ice → cyan → deep-blue → navy
+     HAYATE   spring-wind: mint → emerald → deep forest
+     ROZE     magenta-rose-cascade
+
+   Filters (chromatic aberration / glow) inherit from .brand h1
+   and pick up the per-theme --shadow-* tokens automatically.
+   ============================================================ */
+
+[data-theme="raye"] .brand h1 {
+  background: linear-gradient(
+    178deg,
+    #ffffff 0%,
+    #e0e4ee 18%,
+    #b8bdca 38%,
+    #6a708a 60%,
+    var(--red) 84%,
+    var(--red-deep) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+[data-theme="raye"] .brand h1 .ace-name {
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #d8dce8 30%,
+    var(--red) 78%,
+    var(--red-deep) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+[data-theme="kagari"] .brand h1 {
+  background: linear-gradient(
+    178deg,
+    #fff0d0 0%,
+    #ffd440 13%,
+    #ffaa18 26%,
+    #ff7820 44%,
+    #ff2c08 68%,
+    #b81400 90%,
+    #1a0500 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+[data-theme="kagari"] .brand h1 .ace-name {
+  background: linear-gradient(
+    180deg,
+    #ffd440 0%,
+    #ff7820 30%,
+    #ff2c08 65%,
+    #b81400 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+[data-theme="shizuku"] .brand h1 {
+  background: linear-gradient(
+    178deg,
+    #ffffff 0%,
+    #c8f4ff 14%,
+    #88e4ff 28%,
+    #4dccff 48%,
+    #0070c0 76%,
+    #02081a 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+[data-theme="shizuku"] .brand h1 .ace-name {
+  background: linear-gradient(
+    180deg,
+    #c8f4ff 0%,
+    #4dccff 40%,
+    #0070c0 80%,
+    #02081a 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+[data-theme="hayate"] .brand h1 {
+  background: linear-gradient(
+    178deg,
+    #f0fae8 0%,
+    #c8fad0 14%,
+    #88f0a0 28%,
+    #38e070 48%,
+    #088038 76%,
+    #021410 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+[data-theme="hayate"] .brand h1 .ace-name {
+  background: linear-gradient(
+    180deg,
+    #c8fad0 0%,
+    #38e070 40%,
+    #088038 80%,
+    #021410 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+[data-theme="roze"] .brand h1 {
+  background: linear-gradient(
+    178deg,
+    #ffe0ee 0%,
+    #ffb8d2 14%,
+    #ff80b0 28%,
+    #ff3884 48%,
+    #b80060 76%,
+    #110612 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+[data-theme="roze"] .brand h1 .ace-name {
+  background: linear-gradient(
+    180deg,
+    #ffb8d2 0%,
+    #ff3884 40%,
+    #b80060 80%,
+    #110612 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
 /* Holographic shimmer band — sweeps slowly down across the title text.
