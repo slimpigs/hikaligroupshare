@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+a<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -39,6 +39,164 @@
   --gold-bright: #f4c878;
   --gold-deep: #a87c1e;
   --gold-glow: rgba(244, 200, 120, 0.55);
+
+  /* Theme-tinted drop-shadow tokens for the cyber-neon title and elsewhere.
+     Pre-mixed alpha so they slot into drop-shadow() without color-mix(). */
+  --shadow-r: rgba(255, 26, 58, 0.55);
+  --shadow-g: rgba(244, 200, 120, 0.42);
+  --shadow-h: rgba(255, 85, 102, 0.38);
+}
+
+/* ============================================================
+   SKY STRIKER ACE — six pilot loadouts. Each [data-theme="X"]
+   block overrides the same token set, so every component using
+   var(--red), var(--ember), etc. recolors automatically.
+   ============================================================ */
+
+[data-theme="roze"] {
+  /* Roze base form — rose-pink, lighter than Zeke, less gold-heavy. */
+  --void: #060003;
+  --hull: #110509;
+  --plate: #1a080f;
+  --strut: #4e1024;
+  --red: #ff2868;
+  --red-deep: #b8003a;
+  --red-soft: rgba(255, 40, 104, 0.14);
+  --ember: #ff7a9a;
+  --ember-glow: #ffb0c2;
+  --ember-soft: rgba(255, 122, 154, 0.10);
+  --bone: #fde0e8;
+  --ash: #a08490;
+  --ash-dim: #5c424c;
+  --silver: #d8c8d0;
+  --silver-bright: #f5e8ee;
+  --silver-dim: #7e6e78;
+  --silver-soft: rgba(216, 200, 208, 0.18);
+  --chrome-grad: linear-gradient(180deg, #f5e8ee 0%, #d8c8d0 35%, #8e7882 62%, #5c424c 100%);
+  --gold: #e0b070;
+  --gold-bright: #f8d28c;
+  --gold-deep: #b08838;
+  --gold-glow: rgba(248, 210, 140, 0.45);
+  --shadow-r: rgba(255, 40, 104, 0.55);
+  --shadow-g: rgba(248, 210, 140, 0.40);
+  --shadow-h: rgba(255, 122, 154, 0.38);
+}
+
+[data-theme="raye"] {
+  /* Raye base — silver/platinum dominant with crimson accent. Clean default. */
+  --void: #04050a;
+  --hull: #0a0c14;
+  --plate: #12141d;
+  --strut: #2a2e3a;
+  --red: #ff5070;
+  --red-deep: #c8203c;
+  --red-soft: rgba(255, 80, 112, 0.12);
+  --ember: #ffa0b0;
+  --ember-glow: #ffd0d8;
+  --ember-soft: rgba(255, 160, 176, 0.10);
+  --bone: #f0f4fa;
+  --ash: #9ca0b0;
+  --ash-dim: #4a4e5c;
+  --silver: #e4e8f0;
+  --silver-bright: #fafcff;
+  --silver-dim: #8a90a0;
+  --silver-soft: rgba(228, 232, 240, 0.20);
+  --chrome-grad: linear-gradient(180deg, #fafcff 0%, #e4e8f0 35%, #8a90a0 62%, #4a4e5c 100%);
+  --gold: #d8c298;
+  --gold-bright: #f4e2b8;
+  --gold-deep: #a89870;
+  --gold-glow: rgba(216, 194, 152, 0.42);
+  --shadow-r: rgba(255, 80, 112, 0.55);
+  --shadow-g: rgba(244, 226, 184, 0.40);
+  --shadow-h: rgba(255, 160, 176, 0.38);
+}
+
+[data-theme="kagari"] {
+  /* Kagari — fire mode. Hot orange-red, gold flame accents. Aggressive. */
+  --void: #0a0300;
+  --hull: #160700;
+  --plate: #1f0a02;
+  --strut: #4a1a05;
+  --red: #ff3a14;
+  --red-deep: #a82400;
+  --red-soft: rgba(255, 58, 20, 0.14);
+  --ember: #ff9540;
+  --ember-glow: #ffc080;
+  --ember-soft: rgba(255, 149, 64, 0.10);
+  --bone: #fde8c8;
+  --ash: #a89070;
+  --ash-dim: #4a3a20;
+  --silver: #d8c8b0;
+  --silver-bright: #f8ead0;
+  --silver-dim: #8a7860;
+  --silver-soft: rgba(216, 200, 176, 0.18);
+  --chrome-grad: linear-gradient(180deg, #f8ead0 0%, #d8c8b0 35%, #8a7860 62%, #4a3a20 100%);
+  --gold: #ffa830;
+  --gold-bright: #ffd070;
+  --gold-deep: #b86810;
+  --gold-glow: rgba(255, 168, 48, 0.55);
+  --shadow-r: rgba(255, 58, 20, 0.55);
+  --shadow-g: rgba(255, 208, 112, 0.45);
+  --shadow-h: rgba(255, 149, 64, 0.42);
+}
+
+[data-theme="shizuku"] {
+  /* Shizuku — water/ice. Cyan dominant. The "red" token semantically means
+     "primary energy color" — here it's cyan, not actually red. */
+  --void: #00050a;
+  --hull: #020a14;
+  --plate: #051020;
+  --strut: #0a3050;
+  --red: #4dc8ff;
+  --red-deep: #006ba8;
+  --red-soft: rgba(77, 200, 255, 0.14);
+  --ember: #88e0ff;
+  --ember-glow: #c0f0ff;
+  --ember-soft: rgba(136, 224, 255, 0.10);
+  --bone: #d8eaf8;
+  --ash: #708090;
+  --ash-dim: #354555;
+  --silver: #c0d8e8;
+  --silver-bright: #e8f4fa;
+  --silver-dim: #607080;
+  --silver-soft: rgba(192, 216, 232, 0.20);
+  --chrome-grad: linear-gradient(180deg, #e8f4fa 0%, #c0d8e8 35%, #607080 62%, #354555 100%);
+  --gold: #c8a468;
+  --gold-bright: #e8c890;
+  --gold-deep: #807040;
+  --gold-glow: rgba(200, 164, 104, 0.42);
+  --shadow-r: rgba(77, 200, 255, 0.55);
+  --shadow-g: rgba(232, 200, 144, 0.40);
+  --shadow-h: rgba(136, 224, 255, 0.38);
+}
+
+[data-theme="hayate"] {
+  /* Hayate — wind/green. Emerald + lime-gold flash. Swift. */
+  --void: #00080a;
+  --hull: #021015;
+  --plate: #051a1f;
+  --strut: #0c4030;
+  --red: #4ddc78;
+  --red-deep: #0a7838;
+  --red-soft: rgba(77, 220, 120, 0.14);
+  --ember: #90f0a8;
+  --ember-glow: #c8fad0;
+  --ember-soft: rgba(144, 240, 168, 0.10);
+  --bone: #d8f0e0;
+  --ash: #6a8a78;
+  --ash-dim: #2a4838;
+  --silver: #c0d8c8;
+  --silver-bright: #e8f4e0;
+  --silver-dim: #608078;
+  --silver-soft: rgba(192, 216, 200, 0.18);
+  --chrome-grad: linear-gradient(180deg, #e8f4e0 0%, #c0d8c8 35%, #608078 62%, #2a4838 100%);
+  --gold: #c8d050;
+  --gold-bright: #e8f078;
+  --gold-deep: #707838;
+  --gold-glow: rgba(200, 208, 80, 0.50);
+  --shadow-r: rgba(77, 220, 120, 0.55);
+  --shadow-g: rgba(232, 240, 120, 0.42);
+  --shadow-h: rgba(144, 240, 168, 0.38);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -196,33 +354,107 @@ header.callsign::after {
   50% { opacity: 1; transform: scaleX(1.05); }
 }
 
+/* ============================================================
+   SKY STRIKER // <ACE> — cyber neon callsign.
+   Reads as a holographic combat identifier:
+   - Bold, saturated theme-energy gradient (solid weight, no chrome thinning)
+   - Chromatic aberration via stacked drop-shadow filters
+   - Twin neon halos
+   - Forward skew like an ace mid-deployment
+   - Voltage-flicker (sparse, like real neon)
+   - Holo shimmer band sweeps down the letters
+   All colors come from theme variables, so each ace mode recolors automatically.
+   ============================================================ */
 .brand h1 {
   font-family: 'Audiowide', sans-serif;
-  font-size: 26px;
-  letter-spacing: 0.06em;
-  line-height: 1.1;
+  font-size: 30px;
+  letter-spacing: 0.09em;
+  line-height: 1;
   text-transform: uppercase;
-  background: var(--chrome-grad);
+  position: relative;
+  display: inline-block;
+  transform: skewX(-3deg);
+  background: linear-gradient(
+    178deg,
+    var(--silver-bright) 0%,
+    var(--ember-glow) 12%,
+    var(--ember) 24%,
+    var(--red) 46%,
+    var(--red-deep) 74%,
+    var(--hull) 100%
+  );
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  filter: drop-shadow(0 0 4px rgba(200, 204, 212, 0.18)) drop-shadow(0 0 10px rgba(255, 26, 58, 0.18));
+  filter:
+    drop-shadow(1.5px 0 0 var(--shadow-r))
+    drop-shadow(-1.5px 0 0 var(--shadow-g))
+    drop-shadow(0 0 7px var(--shadow-r))
+    drop-shadow(0 0 22px var(--shadow-h));
+  animation: skyFlicker 7s ease-in-out infinite;
+  transition: filter 0.4s ease;
 }
+
+@keyframes skyFlicker {
+  0%, 84%, 100% { opacity: 1; }
+  85%           { opacity: 0.5; }
+  86%           { opacity: 1; }
+  87.5%         { opacity: 0.72; }
+  89%           { opacity: 1; }
+}
+
 .brand h1 .sep {
-  margin: 0 6px;
+  margin: 0 12px;
   font-family: 'Major Mono Display', monospace;
-  background: linear-gradient(180deg, #ff5566, #ff1a3a 50%, #a30016);
+  font-size: 0.78em;
+  vertical-align: 0.12em;
+  background: linear-gradient(180deg, var(--gold-bright) 0%, var(--gold) 55%, var(--gold-deep) 100%);
   -webkit-background-clip: text;
   background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
-.brand h1 .roze {
-  background: linear-gradient(180deg, #ff8090 0%, #ff1a3a 50%, #a30016 100%);
+
+.brand h1 .ace-name {
+  letter-spacing: 0.14em;
+  background: linear-gradient(
+    180deg,
+    var(--ember-glow) 0%,
+    var(--ember) 22%,
+    var(--red) 50%,
+    var(--red-deep) 100%
+  );
   -webkit-background-clip: text;
   background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 12px rgba(255, 26, 58, 0.55));
+  filter: drop-shadow(0 0 5px var(--shadow-r));
+}
+
+/* Holographic shimmer band — sweeps slowly down across the title text.
+   Uses overlay blend so it only "lights up" where the title pixels are drawn. */
+.brand h1::before {
+  content: '';
+  position: absolute;
+  left: -8%;
+  right: -8%;
+  top: 0;
+  height: 28%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.45) 35%,
+    var(--gold-glow) 50%,
+    rgba(255, 220, 230, 0.3) 65%,
+    transparent 100%
+  );
+  filter: blur(2px);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  animation: skyShimmer 6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes skyShimmer {
+  0%   { transform: translateY(-180%); opacity: 0; }
+  18%  { opacity: 1; }
+  82%  { opacity: 1; }
+  100% { transform: translateY(420%); opacity: 0; }
 }
 .brand .subtitle {
   font-family: 'JetBrains Mono', monospace;
@@ -233,6 +465,132 @@ header.callsign::after {
   margin-top: 5px;
 }
 .brand .subtitle .arms { color: var(--red); }
+
+/* ============================================================
+   ACE SELECT — pilot/loadout switcher rail above the callsign.
+   In-fiction "deploy which ace?" terminal.
+   ============================================================ */
+.ace-select {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 2px;
+  margin-bottom: 2px;
+  border-bottom: 1px dashed var(--ash-dim);
+  flex-wrap: wrap;
+  font-family: 'JetBrains Mono', monospace;
+}
+.ace-select .ace-label {
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  color: var(--silver-dim);
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ace-select .ace-label::before {
+  content: '◇';
+  color: var(--gold-bright);
+  font-size: 10px;
+  text-shadow: 0 0 6px var(--gold-glow);
+}
+.ace-select .ace-chips {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.ace-divider {
+  display: inline-block;
+  width: 1px;
+  height: 16px;
+  background: linear-gradient(180deg, transparent, var(--silver-dim) 30%, var(--silver-dim) 70%, transparent);
+  margin: 0 6px;
+  opacity: 0.7;
+}
+.ace-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px 5px 8px;
+  background: rgba(20, 6, 10, 0.4);
+  border: 1px solid var(--ash-dim);
+  border-radius: 1px;
+  color: var(--silver-dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color 0.22s ease,
+    border-color 0.22s ease,
+    background 0.22s ease,
+    box-shadow 0.22s ease,
+    transform 0.18s cubic-bezier(0.3, 0.8, 0.4, 1);
+  position: relative;
+}
+.ace-chip .swatch {
+  width: 8px; height: 8px;
+  display: inline-block;
+  border-radius: 50%;
+  transition: box-shadow 0.22s ease;
+}
+/* Each chip's swatch is hardcoded to its own theme color so the chips
+   ALWAYS show all six identities, even when only one is active. */
+.ace-chip[data-pick="raye"]    .swatch { background: #ff5070; box-shadow: 0 0 4px rgba(255, 80, 112, 0.6); }
+.ace-chip[data-pick="kagari"]  .swatch { background: #ff3a14; box-shadow: 0 0 5px rgba(255, 149, 64, 0.7); }
+.ace-chip[data-pick="shizuku"] .swatch { background: #4dc8ff; box-shadow: 0 0 5px rgba(136, 224, 255, 0.7); }
+.ace-chip[data-pick="hayate"]  .swatch { background: #4ddc78; box-shadow: 0 0 5px rgba(144, 240, 168, 0.7); }
+.ace-chip[data-pick="roze"]    .swatch { background: #ff2868; box-shadow: 0 0 4px rgba(255, 122, 154, 0.7); }
+.ace-chip[data-pick="zeke"]    .swatch { background: #ff1a3a; box-shadow: 0 0 5px rgba(244, 200, 120, 0.7); }
+
+.ace-chip:hover {
+  color: var(--silver-bright);
+  border-color: var(--silver);
+  background: var(--silver-soft);
+  transform: translateY(-1px);
+}
+.ace-chip:hover .swatch {
+  box-shadow: 0 0 10px currentColor, 0 0 18px currentColor;
+}
+.ace-chip.active {
+  color: var(--bone);
+  border-color: var(--red);
+  background: var(--red-soft);
+  box-shadow: 0 0 12px var(--shadow-r), inset 0 0 6px var(--red-soft);
+}
+.ace-chip.active .swatch {
+  box-shadow: 0 0 6px currentColor, 0 0 14px currentColor, 0 0 24px currentColor;
+}
+.ace-chip:focus-visible {
+  outline: 1px solid var(--gold-bright);
+  outline-offset: 2px;
+}
+
+/* When a theme switch happens, briefly flash a colored sweep across the
+   page to acknowledge the change. Driven by toggling .theme-swap on body. */
+.theme-swap-flash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 200;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--red-soft) 45%,
+    var(--ember-soft) 55%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: themeSwap 0.7s cubic-bezier(0.3, 0.9, 0.3, 1) forwards;
+}
+@keyframes themeSwap {
+  0%   { transform: translateX(-100%); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
 
 .status-block {
   text-align: right;
@@ -1205,6 +1563,19 @@ footer .codename::before { content: '◢ '; color: var(--red); }
 
 <div class="frame">
 
+  <div class="ace-select" role="radiogroup" aria-label="Sky Striker Ace mode">
+    <span class="ace-label">ACE SELECT</span>
+    <div class="ace-chips">
+      <button class="ace-chip" data-pick="raye"    role="radio" aria-label="Raye base"><span class="swatch"></span>Raye</button>
+      <button class="ace-chip" data-pick="kagari"  role="radio" aria-label="Kagari fire mode"><span class="swatch"></span>Kagari</button>
+      <button class="ace-chip" data-pick="shizuku" role="radio" aria-label="Shizuku water mode"><span class="swatch"></span>Shizuku</button>
+      <button class="ace-chip" data-pick="hayate"  role="radio" aria-label="Hayate wind mode"><span class="swatch"></span>Hayate</button>
+      <span class="ace-divider" aria-hidden="true"></span>
+      <button class="ace-chip" data-pick="roze"    role="radio" aria-label="Roze base"><span class="swatch"></span>Roze</button>
+      <button class="ace-chip" data-pick="zeke"    role="radio" aria-label="Zeke armored"><span class="swatch"></span>Zeke</button>
+    </div>
+  </div>
+
   <header class="callsign">
     <div class="brand">
       <div class="glyph">
@@ -1214,8 +1585,8 @@ footer .codename::before { content: '◢ '; color: var(--red); }
         <span class="slit"></span>
       </div>
       <div>
-        <h1>SKY STRIKER<span class="sep">//</span><span class="roze">ROZE</span></h1>
-        <div class="subtitle">arms loadout :: <span class="arms">zeke</span> · encrypted relay · aes-256-gcm</div>
+        <h1>SKY STRIKER<span class="sep">//</span><span class="ace-name" id="aceName">ROZE</span></h1>
+        <div class="subtitle">arms loadout :: <span class="arms" id="armsName">zeke</span> · encrypted relay · aes-256-gcm</div>
       </div>
     </div>
     <div class="status-block">
@@ -1373,6 +1744,64 @@ function setFileMeta(metaEl, file) {
   if (file.type) metaEl.appendChild(document.createTextNode(` · ${file.type}`));
   metaEl.appendChild(document.createTextNode(' ]'));
 }
+
+/* ====== ACE SELECT ======
+   Six Sky Striker Ace loadouts. Each carries a pilot identity (raye / roze)
+   and an arms loadout name. Switching writes data-theme to <html>, swaps
+   the pilot+arms text, persists to localStorage, and flashes a brief sweep
+   to acknowledge the change. */
+const ACE_MODES = {
+  raye:    { pilot: 'RAYE', arms: 'raye' },
+  kagari:  { pilot: 'RAYE', arms: 'kagari' },
+  shizuku: { pilot: 'RAYE', arms: 'shizuku' },
+  hayate:  { pilot: 'RAYE', arms: 'hayate' },
+  roze:    { pilot: 'ROZE', arms: 'roze' },
+  zeke:    { pilot: 'ROZE', arms: 'zeke' },
+};
+const ACE_DEFAULT = 'zeke';
+const ACE_STORAGE_KEY = 'skystriker-theme';
+
+function setAceMode(key, opts = {}) {
+  const cfg = ACE_MODES[key];
+  if (!cfg) return;
+  const flash = opts.flash !== false;
+  const previous = document.documentElement.getAttribute('data-theme');
+
+  // Theme is set on <html> so [data-theme="X"] selectors at :root level apply.
+  // The 'zeke' default lives in the bare :root, so we still set the attribute
+  // for symmetry (lets us reliably read the current theme from the DOM).
+  document.documentElement.setAttribute('data-theme', key);
+
+  $('#aceName').textContent = cfg.pilot;
+  $('#armsName').textContent = cfg.arms;
+
+  $$('.ace-chip').forEach(c => {
+    const isActive = c.dataset.pick === key;
+    c.classList.toggle('active', isActive);
+    c.setAttribute('aria-checked', isActive ? 'true' : 'false');
+  });
+
+  try { localStorage.setItem(ACE_STORAGE_KEY, key); } catch {}
+
+  // Flash overlay only on user-initiated swap (not on initial restore).
+  if (flash && previous !== key) {
+    const f = document.createElement('div');
+    f.className = 'theme-swap-flash';
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 800);
+  }
+}
+
+$$('.ace-chip').forEach(chip => {
+  chip.addEventListener('click', () => setAceMode(chip.dataset.pick));
+});
+
+// Restore previous selection (or default to zeke) on load — no flash.
+(function bootAceMode() {
+  let saved = null;
+  try { saved = localStorage.getItem(ACE_STORAGE_KEY); } catch {}
+  setAceMode(saved && ACE_MODES[saved] ? saved : ACE_DEFAULT, { flash: false });
+})();
 
 /* ====== CLOCK ====== */
 function tickClock() {
