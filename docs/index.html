@@ -712,6 +712,154 @@ header.callsign::after {
   border-radius: 1px;
 }
 
+/* ============================================================
+   SEAL LIST — slim row per file in the multi-file encrypt
+   output. Each row carries: filename · stats · status · actions
+   ============================================================ */
+.seal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+.seal-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  background: rgba(20, 6, 10, 0.55);
+  border: 1px solid var(--strut);
+  border-left: 2px solid var(--red-deep);
+  border-radius: 1px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  transition: border-color 0.3s ease, background 0.3s ease;
+  animation: sealRowIn 0.4s ease backwards;
+}
+.seal-row.queued   { border-left-color: var(--ash-dim); }
+.seal-row.working  {
+  border-left-color: var(--gold);
+  background: linear-gradient(90deg, rgba(217, 160, 74, 0.06), rgba(20, 6, 10, 0.55) 30%);
+}
+.seal-row.sealed   { border-left-color: var(--red); }
+.seal-row.failed   {
+  border-left-color: var(--ember);
+  background: rgba(58, 11, 20, 0.4);
+}
+@keyframes sealRowIn {
+  0%   { opacity: 0; transform: translateX(-6px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+.seal-row .seal-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.seal-row .seal-name {
+  color: var(--silver-bright);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.seal-row .seal-stats {
+  color: var(--silver-dim);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.seal-row .seal-stats .arrow { color: var(--gold); margin: 0 6px; }
+.seal-row .seal-stats .gold  { color: var(--gold-bright); }
+
+.seal-row .seal-status {
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 1px;
+}
+.seal-row.queued  .seal-status { color: var(--silver-dim); border: 1px solid var(--silver-dim); }
+.seal-row.working .seal-status {
+  color: var(--gold-bright);
+  border: 1px solid var(--gold);
+  animation: sealStatusPulse 1.2s ease-in-out infinite;
+}
+@keyframes sealStatusPulse {
+  0%, 100% { box-shadow: 0 0 0 var(--gold-glow); }
+  50%      { box-shadow: 0 0 12px var(--gold-glow); }
+}
+.seal-row.sealed  .seal-status {
+  color: var(--ember-glow);
+  border: 1px solid var(--red);
+  background: rgba(255, 26, 58, 0.08);
+}
+.seal-row.failed  .seal-status {
+  color: var(--ember);
+  border: 1px solid var(--ember);
+}
+
+.seal-row .seal-actions {
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.seal-row.sealed .seal-actions { opacity: 1; }
+
+.seal-row .mini-btn {
+  background: transparent;
+  border: 1px solid var(--ash-dim);
+  color: var(--silver);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 1px;
+  transition: all 0.18s ease;
+}
+.seal-row .mini-btn:hover {
+  border-color: var(--gold-bright);
+  color: var(--gold-bright);
+  background: rgba(217, 160, 74, 0.06);
+  box-shadow: 0 0 8px var(--gold-glow);
+}
+
+/* Multi-file meta — list of locked targets shown in dropzone */
+.enc-target-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--silver);
+}
+.enc-target-list .target-line .idx {
+  color: var(--gold);
+  margin-right: 8px;
+}
+.enc-target-list .target-line .size {
+  color: var(--silver-dim);
+  margin-left: 8px;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+}
+.enc-target-list .target-count {
+  color: var(--ember-glow);
+  margin-top: 4px;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
 /* FILE DROP */
 .dropzone {
   border: 1.5px dashed var(--strut);
@@ -1093,10 +1241,10 @@ footer .codename::before { content: '◢ '; color: var(--red); }
 
     <div class="section-label">Payload Acquisition</div>
     <div class="dropzone" id="encDrop">
-      <input type="file" id="encFile" hidden>
+      <input type="file" id="encFile" hidden multiple>
       <div class="icon">◤━━◥</div>
-      <div class="prompt">Drop Target — Image / Video / Any File</div>
-      <div class="hint">click panel or drag onto surface · max ~80 mb</div>
+      <div class="prompt">Drop Targets — Image / Video / Any File · multiple OK</div>
+      <div class="hint">click panel or drag onto surface · max ~80 mb each · parallel seal</div>
       <div class="file-meta hidden" id="encMeta"></div>
     </div>
 
@@ -1112,13 +1260,13 @@ footer .codename::before { content: '◢ '; color: var(--red); }
 
     <div class="output-area hidden" id="encOutput">
       <div class="output-label">
-        <span>// Sealed Transmission Packet</span>
-        <span class="count" id="encOutCount">0 chars</span>
+        <span>// Sealed Transmissions</span>
+        <span class="count" id="encOutCount">0 files</span>
       </div>
-      <textarea class="cipher-textarea" id="encOutText" readonly spellcheck="false"></textarea>
+      <div class="seal-list" id="encSealList"></div>
       <div class="btn-row" style="margin-top: 14px;">
-        <button class="btn ghost" id="btnCopy">Copy String</button>
-        <button class="btn ghost" id="btnSaveTxt">Save .ssae.txt</button>
+        <button class="btn ghost" id="btnSaveAll">Save All</button>
+        <button class="btn ghost" id="btnCopyAll">Copy All as JSON</button>
       </div>
     </div>
   </section>
@@ -1377,7 +1525,6 @@ function b64ToBytes(b64) {
    of base64) lives in these module-level variables so Copy/Save/Decrypt can
    work on the full string without ever asking the textarea to render it.
 */
-let fullCipher = '';   // last sealed transmission (encode side)
 let fullCipherIn = ''; // currently-loaded cipher for decryption (decode side)
 
 /* Decide what the user sees in the textarea after a large cipher is loaded.
@@ -1409,20 +1556,46 @@ function buildOutputPreview(fullB64, byteCount) {
   return `${head}\n\n…   [ ${sizeLine} · full cipher cached in memory · use COPY / SAVE / BREACH ]   …\n\n${tail}`;
 }
 
-/* ====== ENCRYPT FLOW ====== */
-let encFile = null;
+/* ====== ENCRYPT FLOW (multi-file, parallel) ======
+   Pipeline:
+     1. Derive AES key ONCE per batch (PBKDF2 is the slow part).
+        Shared salt across the batch is safe — each file gets its own IV.
+     2. Run all file encryptions in parallel via Promise.all over
+        crypto.subtle.encrypt (WebCrypto pipelines internally).
+     3. Per-file failures don't kill the batch — each row resolves to
+        either { ok: true, ...packet } or { ok: false, error }.
+*/
+let encFiles = [];       // File[] queued for the next Engage Seal
+let sealedPackets = [];  // [{ filename, b64, byteCount, ok }]
 const encDrop = $('#encDrop');
 const encFileInput = $('#encFile');
 const encMeta = $('#encMeta');
 
-function armEncFile(file) {
-  encFile = file;
+function armEncFiles(fileList) {
+  const files = Array.from(fileList || []);
+  if (!files.length) return;
+  encFiles = files;
   encDrop.classList.add('armed');
-  setFileMeta(encMeta, file);
-  toast(`Target locked: ${file.name}`, 'ok', 'lock');
+  encMeta.classList.remove('hidden');
+  while (encMeta.firstChild) encMeta.removeChild(encMeta.firstChild);
+
+  const wrap = makeEl('div', { cls: 'enc-target-list' });
+  let totalBytes = 0;
+  files.forEach((f, i) => {
+    totalBytes += f.size;
+    const line = makeEl('div', { cls: 'target-line' });
+    line.appendChild(makeEl('span', { cls: 'idx', text: `${String(i + 1).padStart(2, '0')}` }));
+    line.appendChild(document.createTextNode(f.name));
+    line.appendChild(makeEl('span', { cls: 'size', text: fmtBytes(f.size) }));
+    wrap.appendChild(line);
+  });
+  wrap.appendChild(makeEl('div', { cls: 'target-count', text: `${files.length} target${files.length > 1 ? 's' : ''} locked · ${fmtBytes(totalBytes)} total` }));
+  encMeta.appendChild(wrap);
+  toast(`${files.length} target${files.length > 1 ? 's' : ''} locked.`, 'ok', 'lock');
 }
+
 encDrop.addEventListener('click', () => encFileInput.click());
-encFileInput.addEventListener('change', e => { if (e.target.files[0]) armEncFile(e.target.files[0]); });
+encFileInput.addEventListener('change', e => armEncFiles(e.target.files));
 ['dragover', 'dragenter'].forEach(ev => encDrop.addEventListener(ev, e => {
   e.preventDefault(); encDrop.classList.add('drag');
 }));
@@ -1432,86 +1605,193 @@ encFileInput.addEventListener('change', e => { if (e.target.files[0]) armEncFile
 }));
 encDrop.addEventListener('drop', e => {
   e.preventDefault();
-  const file = e.dataTransfer.files[0];
-  if (file) armEncFile(file);
+  armEncFiles(e.dataTransfer.files);
 });
 
+// Each row in the seal list. State machine: queued → working → sealed / failed.
+function makeSealRow(filename, sizeBytes) {
+  const row = makeEl('div', { cls: 'seal-row queued', attrs: { 'data-name': filename } });
+  const info = makeEl('div', { cls: 'seal-info' });
+  info.appendChild(makeEl('div', { cls: 'seal-name', text: filename, attrs: { title: filename } }));
+  const stats = makeEl('div', { cls: 'seal-stats' });
+  stats.appendChild(document.createTextNode(fmtBytes(sizeBytes)));
+  info.appendChild(stats);
+  row.appendChild(info);
+  row.appendChild(makeEl('span', { cls: 'seal-status', text: 'queued' }));
+  row.appendChild(makeEl('div', { cls: 'seal-actions' }));
+  return row;
+}
+function setRowState(row, state, statusText) {
+  row.classList.remove('queued', 'working', 'sealed', 'failed');
+  row.classList.add(state);
+  row.querySelector('.seal-status').textContent = statusText;
+}
+
+async function encryptOne(file, key) {
+  const iv = crypto.getRandomValues(new Uint8Array(IV_LEN));
+  const fileBytes = new Uint8Array(await file.arrayBuffer());
+  const plain = packMetadata(file.name, file.type, fileBytes);
+  const cipherBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plain);
+  const cipher = new Uint8Array(cipherBuf);
+  const versionByte = new Uint8Array([VERSION]);
+  // salt is closed-over from the outer encrypt-batch scope
+  return { iv, cipher, versionByte };
+}
+
 $('#btnEncrypt').addEventListener('click', async () => {
-  if (!encFile) return toast('No file loaded.', 'err', 'abort');
+  if (!encFiles.length) return toast('No files loaded.', 'err', 'abort');
   const words = readCipherWords($('#encCipher'));
   const btn = $('#btnEncrypt');
   const progress = $('#encProgress');
   btn.disabled = true;
-  try {
-    setProgress(progress, 10);
-    const salt = crypto.getRandomValues(new Uint8Array(SALT_LEN));
-    const iv = crypto.getRandomValues(new Uint8Array(IV_LEN));
-    setProgress(progress, 25);
-    const key = await deriveKey(words, salt);
-    setProgress(progress, 55);
-    const fileBytes = new Uint8Array(await encFile.arrayBuffer());
-    const plain = packMetadata(encFile.name, encFile.type, fileBytes);
-    setProgress(progress, 75);
-    const cipherBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plain);
-    const cipher = new Uint8Array(cipherBuf);
-    const versionByte = new Uint8Array([VERSION]);
-    const packet = concatBytes(MAGIC, versionByte, salt, iv, cipher);
-    const b64 = bytesToB64(packet);
-    setProgress(progress, 100);
+  sealedPackets = [];
+  const sealList = $('#encSealList');
+  while (sealList.firstChild) sealList.removeChild(sealList.firstChild);
+  $('#encOutput').classList.remove('hidden');
 
-    fullCipher = b64;
-    $('#encOutput').classList.remove('hidden');
-    $('#encOutText').value = buildOutputPreview(fullCipher, packet.length);
-    $('#encOutCount').textContent = `${b64.length.toLocaleString()} chars · ${fmtBytes(packet.length)} bin`;
-    toast(`Sealed ${fmtBytes(packet.length)} packet.`, 'ok', 'sealed');
+  // Render all rows in queued state first
+  const rows = encFiles.map(f => {
+    const row = makeSealRow(f.name, f.size);
+    sealList.appendChild(row);
+    return row;
+  });
+
+  try {
+    setProgress(progress, 8);
+    // Single shared salt → single KDF call (the expensive step).
+    const salt = crypto.getRandomValues(new Uint8Array(SALT_LEN));
+    setProgress(progress, 18);
+    const key = await deriveKey(words, salt);
+    setProgress(progress, 35);
+
+    // Flip rows to "working" before we kick off the parallel encrypts.
+    rows.forEach(row => setRowState(row, 'working', 'sealing'));
+
+    // Track completion to advance the progress bar incrementally as parallel
+    // promises resolve.
+    let done = 0;
+    const total = encFiles.length;
+    const results = await Promise.all(encFiles.map(async (file, i) => {
+      try {
+        const { iv, cipher, versionByte } = await encryptOne(file, key);
+        const packet = concatBytes(MAGIC, versionByte, salt, iv, cipher);
+        const b64 = bytesToB64(packet);
+        done++;
+        setProgress(progress, 35 + Math.floor((done / total) * 60));
+        return { ok: true, filename: file.name, b64, byteCount: packet.length, srcBytes: file.size };
+      } catch (err) {
+        done++;
+        return { ok: false, filename: file.name, error: err.message || 'seal failed', srcBytes: file.size };
+      }
+    }));
+
+    setProgress(progress, 100);
+    sealedPackets = results;
+
+    // Update each row with final state + per-row actions
+    let okCount = 0, totalBin = 0;
+    results.forEach((r, i) => {
+      const row = rows[i];
+      if (r.ok) {
+        okCount++;
+        totalBin += r.byteCount;
+        setRowState(row, 'sealed', 'sealed');
+        // Stats line with arrow showing inflation from raw → b64
+        const stats = row.querySelector('.seal-stats');
+        while (stats.firstChild) stats.removeChild(stats.firstChild);
+        stats.appendChild(document.createTextNode(fmtBytes(r.srcBytes)));
+        stats.appendChild(makeEl('span', { cls: 'arrow', text: '→' }));
+        stats.appendChild(makeEl('span', { cls: 'gold', text: `${r.b64.length.toLocaleString()} ch` }));
+        stats.appendChild(document.createTextNode(' · ' + fmtBytes(r.byteCount) + ' bin'));
+        // Action buttons
+        const actions = row.querySelector('.seal-actions');
+        const copyBtn = makeEl('button', { cls: 'mini-btn', text: 'Copy' });
+        copyBtn.addEventListener('click', () => copySealed(r));
+        const saveBtn = makeEl('button', { cls: 'mini-btn', text: 'Save' });
+        saveBtn.addEventListener('click', () => saveSealed(r));
+        actions.appendChild(copyBtn);
+        actions.appendChild(saveBtn);
+      } else {
+        setRowState(row, 'failed', 'failed');
+        row.querySelector('.seal-stats').textContent = r.error;
+      }
+    });
+
+    $('#encOutCount').textContent = `${okCount} of ${total} sealed · ${fmtBytes(totalBin)} total`;
+    if (okCount === total) {
+      toast(`Sealed ${okCount} packet${okCount > 1 ? 's' : ''} · ${fmtBytes(totalBin)} total.`, 'ok', 'sealed');
+    } else {
+      toast(`Sealed ${okCount}/${total} — ${total - okCount} failed.`, 'err', 'partial');
+    }
   } catch (err) {
     console.error(err);
     toast(err.message || 'Sealing failed.', 'err', 'abort');
     progress.classList.add('hidden');
+    rows.forEach(row => setRowState(row, 'failed', 'aborted'));
   } finally {
     btn.disabled = false;
   }
 });
 
-$('#btnCopy').addEventListener('click', async () => {
-  if (!fullCipher) return;
+async function copySealed(packet) {
   try {
-    await navigator.clipboard.writeText(fullCipher);
-    toast('Cipher copied to clipboard.', 'ok', 'copy');
+    await navigator.clipboard.writeText(packet.b64);
+    toast(`Cipher copied: ${packet.filename}`, 'ok', 'copy');
   } catch {
-    // Legacy fallback needs the string in the DOM; temporarily inject, copy, restore preview.
-    const ta = $('#encOutText');
-    const prev = ta.value;
-    ta.value = fullCipher;
-    ta.select();
-    document.execCommand('copy');
-    ta.value = prev;
-    toast('Cipher copied (legacy).', 'ok', 'copy');
+    toast('Clipboard blocked; use Save instead.', 'err', 'copy');
+  }
+}
+
+function saveSealed(packet) {
+  // Preserves the original filename so the recipient can map .ssae.txt
+  // back to its original payload at a glance.
+  const blob = new Blob([packet.b64], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${packet.filename}.ssae.txt`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+$('#btnSaveAll').addEventListener('click', () => {
+  const ok = sealedPackets.filter(p => p.ok);
+  if (!ok.length) return toast('Nothing to save.', 'err', 'abort');
+  // Sequential rather than simultaneous — browsers throttle / block
+  // > ~10 simultaneous downloads. 120ms gap is enough to avoid the
+  // "blocked: too many downloads" prompt while staying snappy.
+  ok.forEach((p, i) => setTimeout(() => saveSealed(p), i * 120));
+  toast(`Saving ${ok.length} packet${ok.length > 1 ? 's' : ''}.`, 'ok', 'save');
+});
+
+$('#btnCopyAll').addEventListener('click', async () => {
+  const ok = sealedPackets.filter(p => p.ok);
+  if (!ok.length) return toast('Nothing to copy.', 'err', 'abort');
+  // JSON bundle: easy to send a single chunk over chat and unpack
+  // on the receiver side (paste into decode + manually pick a file
+  // entry, or use a future bulk-decode flow).
+  const bundle = JSON.stringify(
+    ok.map(p => ({ filename: p.filename, cipher: p.b64 })),
+    null, 2
+  );
+  try {
+    await navigator.clipboard.writeText(bundle);
+    toast(`Copied ${ok.length} cipher${ok.length > 1 ? 's' : ''} as JSON.`, 'ok', 'copy');
+  } catch {
+    toast('Clipboard blocked.', 'err', 'copy');
   }
 });
 
-$('#btnSaveTxt').addEventListener('click', () => {
-  const content = fullCipher;
-  if (!content) return;
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const blob = new Blob([content], { type: 'text/plain' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `skystriker-${stamp}.ssae.txt`;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  toast('Packet saved to disk.', 'ok', 'save');
-});
-
 $('#btnEncReset').addEventListener('click', () => {
-  encFile = null;
+  encFiles = [];
+  sealedPackets = [];
   encFileInput.value = '';
   encDrop.classList.remove('armed');
   encMeta.classList.add('hidden');
+  while (encMeta.firstChild) encMeta.removeChild(encMeta.firstChild);
   $$('#encCipher input').forEach(i => i.value = '');
   $('#encOutput').classList.add('hidden');
-  $('#encOutText').value = '';
-  fullCipher = '';
+  const sealList = $('#encSealList');
+  while (sealList.firstChild) sealList.removeChild(sealList.firstChild);
 });
 
 /* ====== URL FETCH (NEW IN V2) ======
