@@ -1688,6 +1688,42 @@ footer .codename { color: var(--ember); }
 footer .codename::before { content: '◢ '; color: var(--red); }
 
 .hidden { display: none !important; }
+
+/* ====== LANG TOGGLE — sits at the far right of the ACE SELECT bar ====== */
+.ace-select { display: flex; align-items: center; gap: 14px; }
+.ace-select .ace-chips { flex: 1; }
+.lang-toggle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--silver);
+  border: 1px solid var(--silver-dim);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+.lang-toggle:hover {
+  color: var(--silver-bright);
+  border-color: var(--silver);
+  background: var(--silver-soft);
+  box-shadow: 0 0 8px var(--silver-soft);
+}
+
+/* Disabled mini-btn (for Replace when no file handle is available) */
+.seal-row .mini-btn[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: auto;
+}
+.seal-row .mini-btn[disabled]:hover {
+  background: transparent;
+  color: var(--silver-dim);
+}
 </style>
 </head>
 <body>
@@ -1712,6 +1748,7 @@ footer .codename::before { content: '◢ '; color: var(--red); }
       <button class="ace-chip" data-pick="roze"    role="radio" aria-label="Roze base"><span class="swatch"></span>Roze</button>
       <button class="ace-chip" data-pick="zeke"    role="radio" aria-label="Zeke armored"><span class="swatch"></span>Zeke</button>
     </div>
+    <button class="lang-toggle" id="langToggle" title="切换语言 / Toggle language" aria-label="Toggle language">中文</button>
   </div>
 
   <header class="callsign">
@@ -1748,34 +1785,34 @@ footer .codename::before { content: '◢ '; color: var(--red); }
   <section class="panel active" data-panel="encode">
     <span class="corner-tr"></span><span class="corner-br"></span>
 
-    <div class="section-label">Payload Acquisition</div>
+    <div class="section-label" data-i18n="sec.payload">Payload Acquisition</div>
     <div class="dropzone" id="encDrop">
       <input type="file" id="encFile" hidden multiple>
       <div class="icon">◤━━◥</div>
-      <div class="prompt">Drop Targets — Image / Video / Any File · multiple OK</div>
-      <div class="hint">click panel or drag onto surface · max ~80 mb each · parallel seal</div>
+      <div class="prompt" data-i18n="drop.prompt">Drop Targets — Image / Video / Any File · multiple OK</div>
+      <div class="hint" data-i18n="drop.hint">click panel or drag onto surface · max ~80 mb each · parallel seal</div>
       <div class="file-meta hidden" id="encMeta"></div>
     </div>
 
-    <div class="section-label">Cipher Lock :: 6 Word Authorization</div>
+    <div class="section-label" data-i18n="sec.cipher">Cipher Lock :: 6 Word Authorization</div>
     <div class="cipher-grid" id="encCipher"></div>
 
     <div class="btn-row">
-      <button class="btn" id="btnEncrypt">Engage Seal</button>
-      <button class="btn ghost" id="btnEncReset">Reset</button>
+      <button class="btn" id="btnEncrypt" data-i18n="btn.seal">Engage Seal</button>
+      <button class="btn ghost" id="btnEncReset" data-i18n="btn.reset">Reset</button>
     </div>
 
     <div class="progress hidden" id="encProgress"><div class="progress-fill"></div></div>
 
     <div class="output-area hidden" id="encOutput">
       <div class="output-label">
-        <span>// Sealed Transmissions</span>
+        <span data-i18n="sealed.label">// Sealed Transmissions</span>
         <span class="count" id="encOutCount">0 files</span>
       </div>
       <div class="seal-list" id="encSealList"></div>
       <div class="btn-row" style="margin-top: 14px;">
-        <button class="btn ghost" id="btnSaveAll">Save All</button>
-        <button class="btn ghost" id="btnCopyAll">Copy All as JSON</button>
+        <button class="btn ghost" id="btnSaveAll" data-i18n="btn.saveAll">Save All</button>
+        <button class="btn ghost" id="btnCopyAll" data-i18n="btn.copyAll">Copy All as JSON</button>
       </div>
     </div>
   </section>
@@ -1784,30 +1821,30 @@ footer .codename::before { content: '◢ '; color: var(--red); }
   <section class="panel" data-panel="decode">
     <span class="corner-tr"></span><span class="corner-br"></span>
 
-    <div class="section-label">Remote Acquisition :: Pull from URL</div>
+    <div class="section-label" data-i18n="sec.remote">Remote Acquisition :: Pull from URL</div>
     <div class="url-row">
-      <input type="url" id="decUrl" placeholder="paste github raw .txt url, gist, or any direct cipher link…" spellcheck="false" autocomplete="off">
-      <button class="fetch-btn" id="btnFetchUrl">Fetch</button>
+      <input type="url" id="decUrl" placeholder="paste github raw .txt url, gist, or any direct cipher link…" data-i18n-attr="placeholder:urlPh" spellcheck="false" autocomplete="off">
+      <button class="fetch-btn" id="btnFetchUrl" data-i18n="btn.fetch">Fetch</button>
     </div>
     <div class="url-status" id="urlStatus"></div>
     <div class="xmit-readout" id="xmitReadout" aria-hidden="true"></div>
 
-    <div class="section-label">Cipher Intake :: Paste String or Upload File</div>
-    <textarea class="input-cipher" id="decInput" placeholder="paste the sealed transmission string here…" spellcheck="false"></textarea>
+    <div class="section-label" data-i18n="sec.intake">Cipher Intake :: Paste String or Upload File</div>
+    <textarea class="input-cipher" id="decInput" placeholder="paste the sealed transmission string here…" data-i18n-attr="placeholder:inputPh" spellcheck="false"></textarea>
 
     <div class="dropzone" id="decDrop" style="padding: 22px;">
       <input type="file" id="decFile" hidden accept=".txt,.ssae">
       <div class="icon" style="font-size: 18px;">◤━━◥</div>
-      <div class="prompt" style="font-size: 12px;">Or drop the .ssae.txt payload</div>
+      <div class="prompt" data-i18n="dec.drop" style="font-size: 12px;">Or drop the .ssae.txt payload</div>
       <div class="file-meta hidden" id="decMeta"></div>
     </div>
 
-    <div class="section-label">Cipher Lock :: 6 Word Authorization</div>
+    <div class="section-label" data-i18n="sec.cipher">Cipher Lock :: 6 Word Authorization</div>
     <div class="cipher-grid" id="decCipher"></div>
 
     <div class="btn-row">
-      <button class="btn strike" id="btnDecrypt">Breach Transmission</button>
-      <button class="btn ghost" id="btnDecReset">Reset</button>
+      <button class="btn strike" id="btnDecrypt" data-i18n="btn.breach">Breach Transmission</button>
+      <button class="btn ghost" id="btnDecReset" data-i18n="btn.reset">Reset</button>
     </div>
 
     <div class="progress hidden" id="decProgress"><div class="progress-fill"></div></div>
@@ -1819,13 +1856,13 @@ footer .codename::before { content: '◢ '; color: var(--red); }
       </div>
       <div class="preview-canvas" id="prevCanvas"></div>
       <div class="btn-row" style="margin: 14px; gap: 10px;">
-        <button class="btn" id="btnDownload">Download Recovered File</button>
+        <button class="btn" id="btnDownload" data-i18n="btn.download">Download Recovered File</button>
       </div>
     </div>
   </section>
 
   <footer class="transmit">
-    <div>Built browser-side · zero network · keys never leave your tab</div>
+    <div data-i18n="footer.tag">Built browser-side · zero network · keys never leave your tab</div>
     <div class="codename" id="codename">CALLSIGN :: ROZE-09 // ZEKE</div>
   </footer>
 
@@ -1881,6 +1918,141 @@ function setFileMeta(metaEl, file) {
   metaEl.appendChild(document.createTextNode(` · ${fmtBytes(file.size)}`));
   if (file.type) metaEl.appendChild(document.createTextNode(` · ${file.type}`));
   metaEl.appendChild(document.createTextNode(' ]'));
+}
+
+/* ====== i18n ======
+   Functional UI translation. Brand vocabulary (SEAL / BREACH / LOADOUT /
+   ACE SELECT / callsigns) stays English by design — those are part of the
+   cyber aesthetic and read the same to a Chinese-speaking pilot.
+     - elements with data-i18n="key"        → textContent rewritten
+     - elements with data-i18n-attr="a:k"   → attribute rewritten
+     - JS: call t('key', ...args) for dynamic strings (toasts, etc.) */
+const I18N = {
+  en: {
+    'sec.payload':  'Payload Acquisition',
+    'drop.prompt':  'Drop Targets — Image / Video / Any File · multiple OK',
+    'drop.hint':    'click panel or drag onto surface · max ~80 mb each · parallel seal',
+    'sec.cipher':   'Cipher Lock :: 6 Word Authorization',
+    'btn.seal':     'Engage Seal',
+    'btn.reset':    'Reset',
+    'sealed.label': '// Sealed Transmissions',
+    'btn.saveAll':  'Save All',
+    'btn.copyAll':  'Copy All as JSON',
+    'sec.remote':   'Remote Acquisition :: Pull from URL',
+    'urlPh':        'paste github raw .txt url, gist, or any direct cipher link…',
+    'btn.fetch':    'Fetch',
+    'sec.intake':   'Cipher Intake :: Paste String or Upload File',
+    'inputPh':      'paste the sealed transmission string here…',
+    'dec.drop':     'Or drop the .ssae.txt payload',
+    'btn.breach':   'Breach Transmission',
+    'btn.download': 'Download Recovered File',
+    'footer.tag':   'Built browser-side · zero network · keys never leave your tab',
+    'mini.copy':    'Copy',
+    'mini.save':    'Save',
+    'mini.replace': 'Replace',
+    'mini.replace.disabledTitle': 'Replace requires File System Access API (Chromium browsers only)',
+    'lang.toggle':  '中文',
+    'toast.locked':           (n) => `${n} target${n > 1 ? 's' : ''} locked.`,
+    'toast.noFiles':          'No files loaded.',
+    'toast.sealedAll':        (n, sz) => `Sealed ${n} packet${n > 1 ? 's' : ''} · ${sz} total.`,
+    'toast.sealedPartial':    (ok, total) => `Sealed ${ok}/${total} — ${total - ok} failed.`,
+    'toast.copiedOne':        (name) => `Cipher copied: ${name}`,
+    'toast.copyBlocked':      'Clipboard blocked; use Save instead.',
+    'toast.saving':           (n) => `Saving ${n} packet${n > 1 ? 's' : ''}.`,
+    'toast.nothingSave':      'Nothing to save.',
+    'toast.nothingCopy':      'Nothing to copy.',
+    'toast.copiedJson':       (n) => `Copied ${n} cipher${n > 1 ? 's' : ''} as JSON.`,
+    'toast.clipboardBlocked': 'Clipboard blocked.',
+    'toast.sealFailed':       'Sealing failed.',
+    'toast.replaceOk':        (name) => `Replaced: ${name} → ${name}.ssae.txt`,
+    'toast.replaceOkNoMove':  (name) => `Content replaced for ${name} (rename unsupported on this browser; file kept original name).`,
+    'toast.replaceFail':      (name, err) => `Replace failed (${name}): ${err}`,
+    'toast.replaceNoHandle':  'Replace needs files picked via Chrome / Edge / Brave / Opera (try clicking the dropzone again).',
+    'toast.replaceNotSupported': 'Replace requires a Chromium browser (Chrome / Edge / Opera / Brave).',
+    'toast.noCipher':         'No cipher input.',
+    'toast.downloadStart':    'Download initiated.',
+  },
+  zh: {
+    'sec.payload':  '装载目标',
+    'drop.prompt':  '拖入图片 / 视频 / 任意文件 · 支持多选',
+    'drop.hint':    '点击面板或拖入 · 单文件 ≤ 80 MB · 并行加密',
+    'sec.cipher':   '密码锁定 :: 6 词鉴权',
+    'btn.seal':     '执行封印',
+    'btn.reset':    '重置',
+    'sealed.label': '// 封印输出',
+    'btn.saveAll':  '全部保存',
+    'btn.copyAll':  '复制全部为 JSON',
+    'sec.remote':   '远程获取 :: 从 URL 拉取',
+    'urlPh':        '粘贴 github raw .txt 链接、gist 或任意直链…',
+    'btn.fetch':    '获取',
+    'sec.intake':   '密文接入 :: 粘贴字符串或上传文件',
+    'inputPh':      '在此粘贴封印好的密文字符串…',
+    'dec.drop':     '或拖入 .ssae.txt 文件',
+    'btn.breach':   '破封传输',
+    'btn.download': '下载还原文件',
+    'footer.tag':   '浏览器端执行 · 零网络 · 密钥不离开你的标签页',
+    'mini.copy':    '复制',
+    'mini.save':    '保存',
+    'mini.replace': '替换',
+    'mini.replace.disabledTitle': '替换功能需要 File System Access API（仅 Chromium 内核浏览器）',
+    'lang.toggle':  'EN',
+    'toast.locked':           (n) => `已锁定 ${n} 个目标。`,
+    'toast.noFiles':          '未加载任何文件。',
+    'toast.sealedAll':        (n, sz) => `已封印 ${n} 个数据包 · 共 ${sz}。`,
+    'toast.sealedPartial':    (ok, total) => `已封印 ${ok}/${total} — ${total - ok} 个失败。`,
+    'toast.copiedOne':        (name) => `密文已复制：${name}`,
+    'toast.copyBlocked':      '剪贴板被拦截，请改用保存。',
+    'toast.saving':           (n) => `正在保存 ${n} 个数据包。`,
+    'toast.nothingSave':      '没有可保存的内容。',
+    'toast.nothingCopy':      '没有可复制的内容。',
+    'toast.copiedJson':       (n) => `已将 ${n} 个密文复制为 JSON。`,
+    'toast.clipboardBlocked': '剪贴板被拦截。',
+    'toast.sealFailed':       '封印失败。',
+    'toast.replaceOk':        (name) => `已替换：${name} → ${name}.ssae.txt`,
+    'toast.replaceOkNoMove':  (name) => `已替换 ${name} 内容（当前浏览器不支持重命名，文件名保持不变）。`,
+    'toast.replaceFail':      (name, err) => `替换失败（${name}）：${err}`,
+    'toast.replaceNoHandle':  '替换功能需要使用 Chrome / Edge / Brave / Opera 选择文件（请再次点击拖放区域）。',
+    'toast.replaceNotSupported': '替换功能需要 Chromium 内核浏览器（Chrome / Edge / Opera / Brave）。',
+    'toast.noCipher':         '未输入密文。',
+    'toast.downloadStart':    '已开始下载。',
+  },
+};
+
+let LANG = 'en';
+const LANG_KEY = 'skystriker-lang';
+try {
+  const stored = localStorage.getItem(LANG_KEY);
+  if (stored === 'en' || stored === 'zh') LANG = stored;
+  else if (navigator.language && navigator.language.toLowerCase().startsWith('zh')) LANG = 'zh';
+} catch {}
+
+function t(key, ...args) {
+  const dict = I18N[LANG] || I18N.en;
+  let v = dict[key];
+  if (v == null) v = I18N.en[key];
+  if (v == null) return key;
+  return typeof v === 'function' ? v(...args) : v;
+}
+
+function applyI18n() {
+  document.documentElement.setAttribute('lang', LANG === 'zh' ? 'zh-CN' : 'en');
+  $$('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  $$('[data-i18n-attr]').forEach(el => {
+    el.getAttribute('data-i18n-attr').split(',').forEach(pair => {
+      const [attr, key] = pair.trim().split(':');
+      if (attr && key) el.setAttribute(attr, t(key));
+    });
+  });
+  const toggle = $('#langToggle');
+  if (toggle) toggle.textContent = t('lang.toggle');
+}
+
+function toggleLang() {
+  LANG = LANG === 'zh' ? 'en' : 'zh';
+  try { localStorage.setItem(LANG_KEY, LANG); } catch {}
+  applyI18n();
 }
 
 /* ====== ACE SELECT ======
@@ -2153,15 +2325,20 @@ function buildOutputPreview(fullB64, byteCount) {
         either { ok: true, ...packet } or { ok: false, error }.
 */
 let encFiles = [];       // File[] queued for the next Engage Seal
-let sealedPackets = [];  // [{ filename, b64, byteCount, ok }]
+let encHandles = [];     // parallel array of FileSystemFileHandle | null (Chromium only)
+let sealedPackets = [];  // [{ filename, b64, byteCount, ok, handle }]
 const encDrop = $('#encDrop');
 const encFileInput = $('#encFile');
 const encMeta = $('#encMeta');
+const FSA_SUPPORTED = typeof window.showOpenFilePicker === 'function';
 
-function armEncFiles(fileList) {
+function armEncFiles(fileList, handles) {
   const files = Array.from(fileList || []);
   if (!files.length) return;
   encFiles = files;
+  encHandles = (handles && handles.length === files.length)
+    ? handles
+    : new Array(files.length).fill(null);
   encDrop.classList.add('armed');
   encMeta.classList.remove('hidden');
   while (encMeta.firstChild) encMeta.removeChild(encMeta.firstChild);
@@ -2178,10 +2355,25 @@ function armEncFiles(fileList) {
   });
   wrap.appendChild(makeEl('div', { cls: 'target-count', text: `${files.length} target${files.length > 1 ? 's' : ''} locked · ${fmtBytes(totalBytes)} total` }));
   encMeta.appendChild(wrap);
-  toast(`${files.length} target${files.length > 1 ? 's' : ''} locked.`, 'ok', 'lock');
+  toast(t('toast.locked', files.length), 'ok', 'lock');
 }
 
-encDrop.addEventListener('click', () => encFileInput.click());
+// FSA-aware click: try showOpenFilePicker first to capture handles for Replace;
+// fall back to the legacy hidden <input type="file"> on Firefox / Safari / user-deny.
+encDrop.addEventListener('click', async () => {
+  if (FSA_SUPPORTED) {
+    try {
+      const handles = await window.showOpenFilePicker({ multiple: true });
+      const files = await Promise.all(handles.map(h => h.getFile()));
+      armEncFiles(files, handles);
+      return;
+    } catch (e) {
+      if (e.name === 'AbortError') return;  // user cancelled the picker
+      // any other error: fall through to legacy picker
+    }
+  }
+  encFileInput.click();
+});
 encFileInput.addEventListener('change', e => armEncFiles(e.target.files));
 ['dragover', 'dragenter'].forEach(ev => encDrop.addEventListener(ev, e => {
   e.preventDefault(); encDrop.classList.add('drag');
@@ -2190,9 +2382,22 @@ encFileInput.addEventListener('change', e => armEncFiles(e.target.files));
   if (ev === 'dragleave' && encDrop.contains(e.relatedTarget)) return;
   encDrop.classList.remove('drag');
 }));
-encDrop.addEventListener('drop', e => {
+encDrop.addEventListener('drop', async e => {
   e.preventDefault();
-  armEncFiles(e.dataTransfer.files);
+  let handles = null;
+  const items = e.dataTransfer && e.dataTransfer.items ? [...e.dataTransfer.items] : [];
+  // Chromium-only: DataTransferItem.getAsFileSystemHandle() lets us capture
+  // writable handles from drag-drop too, not just the file picker.
+  if (items.length && typeof items[0].getAsFileSystemHandle === 'function') {
+    try {
+      const fileItems = items.filter(it => it.kind === 'file');
+      const got = await Promise.all(
+        fileItems.map(it => it.getAsFileSystemHandle().catch(() => null))
+      );
+      handles = got.map(h => (h && h.kind === 'file') ? h : null);
+    } catch { handles = null; }
+  }
+  armEncFiles(e.dataTransfer.files, handles);
 });
 
 // Each row in the seal list. State machine: queued → working → sealed / failed.
@@ -2226,7 +2431,7 @@ async function encryptOne(file, key) {
 }
 
 $('#btnEncrypt').addEventListener('click', async () => {
-  if (!encFiles.length) return toast('No files loaded.', 'err', 'abort');
+  if (!encFiles.length) return toast(t('toast.noFiles'), 'err', 'abort');
   const words = readCipherWords($('#encCipher'));
   const btn = $('#btnEncrypt');
   const progress = $('#encProgress');
@@ -2265,7 +2470,7 @@ $('#btnEncrypt').addEventListener('click', async () => {
         const b64 = bytesToB64(packet);
         done++;
         setProgress(progress, 35 + Math.floor((done / total) * 60));
-        return { ok: true, filename: file.name, b64, byteCount: packet.length, srcBytes: file.size };
+        return { ok: true, filename: file.name, b64, byteCount: packet.length, srcBytes: file.size, handle: encHandles[i] || null };
       } catch (err) {
         done++;
         return { ok: false, filename: file.name, error: err.message || 'seal failed', srcBytes: file.size };
@@ -2290,14 +2495,24 @@ $('#btnEncrypt').addEventListener('click', async () => {
         stats.appendChild(makeEl('span', { cls: 'arrow', text: '→' }));
         stats.appendChild(makeEl('span', { cls: 'gold', text: `${r.b64.length.toLocaleString()} ch` }));
         stats.appendChild(document.createTextNode(' · ' + fmtBytes(r.byteCount) + ' bin'));
-        // Action buttons
+        // Action buttons — Copy, Save, Replace.
+        // Replace overwrites the original file in place using the File System
+        // Access API. Only available if we captured a writable handle when the
+        // file was picked (Chromium-only path).
         const actions = row.querySelector('.seal-actions');
-        const copyBtn = makeEl('button', { cls: 'mini-btn', text: 'Copy' });
+        const copyBtn = makeEl('button', { cls: 'mini-btn', text: t('mini.copy') });
         copyBtn.addEventListener('click', () => copySealed(r));
-        const saveBtn = makeEl('button', { cls: 'mini-btn', text: 'Save' });
+        const saveBtn = makeEl('button', { cls: 'mini-btn', text: t('mini.save') });
         saveBtn.addEventListener('click', () => saveSealed(r));
+        const replaceBtn = makeEl('button', { cls: 'mini-btn', text: t('mini.replace') });
+        if (!r.handle) {
+          replaceBtn.disabled = true;
+          replaceBtn.title = t('mini.replace.disabledTitle');
+        }
+        replaceBtn.addEventListener('click', () => replaceSealed(r, replaceBtn));
         actions.appendChild(copyBtn);
         actions.appendChild(saveBtn);
+        actions.appendChild(replaceBtn);
       } else {
         setRowState(row, 'failed', 'failed');
         row.querySelector('.seal-stats').textContent = r.error;
@@ -2306,13 +2521,13 @@ $('#btnEncrypt').addEventListener('click', async () => {
 
     $('#encOutCount').textContent = `${okCount} of ${total} sealed · ${fmtBytes(totalBin)} total`;
     if (okCount === total) {
-      toast(`Sealed ${okCount} packet${okCount > 1 ? 's' : ''} · ${fmtBytes(totalBin)} total.`, 'ok', 'sealed');
+      toast(t('toast.sealedAll', okCount, fmtBytes(totalBin)), 'ok', 'sealed');
     } else {
-      toast(`Sealed ${okCount}/${total} — ${total - okCount} failed.`, 'err', 'partial');
+      toast(t('toast.sealedPartial', okCount, total), 'err', 'partial');
     }
   } catch (err) {
     console.error(err);
-    toast(err.message || 'Sealing failed.', 'err', 'abort');
+    toast(err.message || t('toast.sealFailed'), 'err', 'abort');
     progress.classList.add('hidden');
     rows.forEach(row => setRowState(row, 'failed', 'aborted'));
   } finally {
@@ -2323,9 +2538,9 @@ $('#btnEncrypt').addEventListener('click', async () => {
 async function copySealed(packet) {
   try {
     await navigator.clipboard.writeText(packet.b64);
-    toast(`Cipher copied: ${packet.filename}`, 'ok', 'copy');
+    toast(t('toast.copiedOne', packet.filename), 'ok', 'copy');
   } catch {
-    toast('Clipboard blocked; use Save instead.', 'err', 'copy');
+    toast(t('toast.copyBlocked'), 'err', 'copy');
   }
 }
 
@@ -2340,19 +2555,59 @@ function saveSealed(packet) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
+// Replace: overwrite the original file with the ciphertext, then rename it to
+// <original>.ssae.txt — all via the File System Access API. Only works when
+// the file was picked via showOpenFilePicker / drag-drop in a Chromium browser
+// (handle was captured at pick time).
+//
+// handle.move(newName) needs Chrome 123+; if it fails (older Chromium, or some
+// sandboxed FS where rename is forbidden), the content swap still completes —
+// the file just keeps its original name. We surface that as a partial-success
+// toast rather than rolling back, because rolling back would mean re-fetching
+// the original bytes which we no longer have.
+async function replaceSealed(packet, btn) {
+  if (!packet.handle) {
+    return toast(FSA_SUPPORTED ? t('toast.replaceNoHandle') : t('toast.replaceNotSupported'), 'err', 'replace');
+  }
+  const origLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    const writable = await packet.handle.createWritable();
+    await writable.write(packet.b64);
+    await writable.close();
+    let moved = false;
+    if (typeof packet.handle.move === 'function') {
+      try {
+        await packet.handle.move(`${packet.filename}.ssae.txt`);
+        moved = true;
+      } catch (e) {
+        console.warn('handle.move failed; content replaced but file kept original name', e);
+      }
+    }
+    btn.textContent = '✓';
+    toast(t(moved ? 'toast.replaceOk' : 'toast.replaceOkNoMove', packet.filename), 'ok', 'replace');
+    setTimeout(() => { btn.textContent = origLabel; btn.disabled = false; }, 1800);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = origLabel;
+    toast(t('toast.replaceFail', packet.filename, e.message || String(e)), 'err', 'replace');
+  }
+}
+
 $('#btnSaveAll').addEventListener('click', () => {
   const ok = sealedPackets.filter(p => p.ok);
-  if (!ok.length) return toast('Nothing to save.', 'err', 'abort');
+  if (!ok.length) return toast(t('toast.nothingSave'), 'err', 'abort');
   // Sequential rather than simultaneous — browsers throttle / block
   // > ~10 simultaneous downloads. 120ms gap is enough to avoid the
   // "blocked: too many downloads" prompt while staying snappy.
   ok.forEach((p, i) => setTimeout(() => saveSealed(p), i * 120));
-  toast(`Saving ${ok.length} packet${ok.length > 1 ? 's' : ''}.`, 'ok', 'save');
+  toast(t('toast.saving', ok.length), 'ok', 'save');
 });
 
 $('#btnCopyAll').addEventListener('click', async () => {
   const ok = sealedPackets.filter(p => p.ok);
-  if (!ok.length) return toast('Nothing to copy.', 'err', 'abort');
+  if (!ok.length) return toast(t('toast.nothingCopy'), 'err', 'abort');
   // JSON bundle: easy to send a single chunk over chat and unpack
   // on the receiver side (paste into decode + manually pick a file
   // entry, or use a future bulk-decode flow).
@@ -2362,14 +2617,15 @@ $('#btnCopyAll').addEventListener('click', async () => {
   );
   try {
     await navigator.clipboard.writeText(bundle);
-    toast(`Copied ${ok.length} cipher${ok.length > 1 ? 's' : ''} as JSON.`, 'ok', 'copy');
+    toast(t('toast.copiedJson', ok.length), 'ok', 'copy');
   } catch {
-    toast('Clipboard blocked.', 'err', 'copy');
+    toast(t('toast.clipboardBlocked'), 'err', 'copy');
   }
 });
 
 $('#btnEncReset').addEventListener('click', () => {
   encFiles = [];
+  encHandles = [];
   sealedPackets = [];
   encFileInput.value = '';
   encDrop.classList.remove('armed');
@@ -2685,7 +2941,7 @@ $('#decInput').addEventListener('input', () => { fullCipherIn = ''; });
 
 $('#btnDecrypt').addEventListener('click', async () => {
   const b64 = fullCipherIn || $('#decInput').value.trim();
-  if (!b64) return toast('No cipher input.', 'err', 'abort');
+  if (!b64) return toast(t('toast.noCipher'), 'err', 'abort');
   const words = readCipherWords($('#decCipher'));
   const btn = $('#btnDecrypt');
   const progress = $('#decProgress');
@@ -2793,7 +3049,7 @@ $('#btnDownload').addEventListener('click', () => {
   a.href = lastDecrypted.url;
   a.download = lastDecrypted.filename;
   document.body.appendChild(a); a.click(); a.remove();
-  toast('Download initiated.', 'ok', 'deploy');
+  toast(t('toast.downloadStart'), 'ok', 'deploy');
 });
 
 $('#btnDecReset').addEventListener('click', () => {
@@ -2811,6 +3067,10 @@ $('#btnDecReset').addEventListener('click', () => {
   lastDecrypted = null;
   fullCipherIn = '';
 });
+
+/* ====== LANG TOGGLE WIRING ====== */
+$('#langToggle').addEventListener('click', toggleLang);
+applyI18n();
 
 /* ====== STARTUP TOAST ====== */
 window.addEventListener('load', () => {
