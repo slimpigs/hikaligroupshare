@@ -2046,6 +2046,7 @@ footer .codename::before { content: '◢ '; color: var(--red); }
       <div class="btn-row" style="margin-top: 14px;">
         <button class="btn ghost" id="btnSaveAll" data-i18n="btn.saveAll">Save All</button>
         <button class="btn ghost" id="btnCopyAll" data-i18n="btn.copyAll">Copy All as JSON</button>
+        <button class="btn ghost" id="btnSaveAllJson" data-i18n="btn.saveAllJson">Save All as JSON</button>
       </div>
     </div>
   </section>
@@ -2066,7 +2067,7 @@ footer .codename::before { content: '◢ '; color: var(--red); }
     <textarea class="input-cipher" id="decInput" placeholder="paste the sealed transmission string here…" data-i18n-attr="placeholder:inputPh" spellcheck="false"></textarea>
 
     <div class="dropzone" id="decDrop" style="padding: 22px;">
-      <input type="file" id="decFile" hidden accept=".txt,.ssae">
+      <input type="file" id="decFile" hidden accept=".txt,.ssae,.json">
       <div class="icon" style="font-size: 18px;">◤━━◥</div>
       <div class="prompt" data-i18n="dec.drop" style="font-size: 12px;">Or drop the .ssae.txt payload</div>
       <div class="file-meta hidden" id="decMeta"></div>
@@ -2190,6 +2191,7 @@ const I18N = {
     'sealed.label': '// Sealed Transmissions',
     'btn.saveAll':  'Save All',
     'btn.copyAll':  'Copy All as JSON',
+    'btn.saveAllJson': 'Save All as JSON',
     'sec.remote':   'Remote Acquisition :: Pull from URL',
     'urlPh':        'paste github raw .txt url, gist, or any direct cipher link…',
     'btn.fetch':    'Fetch',
@@ -2256,6 +2258,7 @@ const I18N = {
     'sealed.label': '// 封印输出',
     'btn.saveAll':  '全部保存',
     'btn.copyAll':  '复制全部为 JSON',
+    'btn.saveAllJson': '保存全部为 JSON',
     'sec.remote':   '远程获取 :: 从 URL 拉取',
     'urlPh':        '粘贴 github raw .txt 链接、gist 或任意直链…',
     'btn.fetch':    '获取',
@@ -2904,9 +2907,9 @@ $('#btnSaveAll').addEventListener('click', () => {
 $('#btnCopyAll').addEventListener('click', async () => {
   const ok = sealedPackets.filter(p => p.ok);
   if (!ok.length) return toast(t('toast.nothingCopy'), 'err', 'abort');
-  // JSON bundle: easy to send a single chunk over chat and unpack
-  // on the receiver side (paste into decode + manually pick a file
-  // entry, or use a future bulk-decode flow).
+  // JSON bundle: easy to send a single chunk over chat and unpack on the
+  // receiver side. Clipboard works well for small bundles (<10 MB chars);
+  // for larger bundles use Save All as JSON instead.
   const bundle = JSON.stringify(
     ok.map(p => ({ filename: p.filename, cipher: p.b64 })),
     null, 2
@@ -2917,6 +2920,28 @@ $('#btnCopyAll').addEventListener('click', async () => {
   } catch {
     toast(t('toast.clipboardBlocked'), 'err', 'copy');
   }
+});
+
+// Save All as JSON — downloads the bundle as a .json file. Use this for big
+// bundles where clipboard would fail or chat apps would reject the paste.
+// Receiver drops the .json onto the BREACH dropzone and the bundle UI picks it up.
+$('#btnSaveAllJson').addEventListener('click', () => {
+  const ok = sealedPackets.filter(p => p.ok);
+  if (!ok.length) return toast(t('toast.nothingSave'), 'err', 'abort');
+  const bundle = JSON.stringify(
+    ok.map(p => ({ filename: p.filename, cipher: p.b64 })),
+    null, 2
+  );
+  // Filename mirrors the existing skystriker-{ISO}.ssae.txt convention
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const filename = `skystriker-bundle-${ts}-${ok.length}files.json`;
+  const blob = new Blob([bundle], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast(t('toast.saving', ok.length), 'ok', 'save');
 });
 
 $('#btnEncReset').addEventListener('click', () => {
