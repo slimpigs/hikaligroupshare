@@ -2346,6 +2346,18 @@ function applyI18n() {
   });
   const toggle = $('#langToggle');
   if (toggle) toggle.textContent = t('lang.toggle');
+
+  // Re-render bundle dynamic strings (parameterized — can't use data-i18n).
+  // Guarded by typeof because applyI18n() runs once during script init, BEFORE
+  // the bundle-pipeline block defines `breachBundle` / `breachBundleResults`.
+  if (typeof breachBundle !== 'undefined' && breachBundle && breachBundle.length) {
+    const totalChars = breachBundle.reduce((acc, e) => acc + e.b64.length, 0);
+    const sumEl = $('#bundleSummary');
+    if (sumEl) sumEl.textContent = t('bundle.summary', breachBundle.length, fmtBytes(Math.floor(totalChars * 0.75)));
+    const done = (typeof breachBundleResults !== 'undefined' ? breachBundleResults.filter(r => r?.ok).length : 0);
+    const counterEl = $('#bundleCounter');
+    if (counterEl) counterEl.textContent = t('bundle.counter', done, breachBundle.length);
+  }
 }
 
 function toggleLang() {
@@ -3456,7 +3468,8 @@ function makeBreachRow(index, name, sizeBytes) {
   info.appendChild(makeEl('div', { cls: 'breach-name', text: name, attrs: { title: name } }));
   info.appendChild(makeEl('div', { cls: 'breach-stats', text: fmtBytes(sizeBytes) }));
   row.appendChild(info);
-  row.appendChild(makeEl('span', { cls: 'breach-status', text: t('breach.status.queued') }));
+  // data-i18n on status so applyI18n() re-translates it on language toggle
+  row.appendChild(makeEl('span', { cls: 'breach-status', text: t('breach.status.queued'), attrs: { 'data-i18n': 'breach.status.queued' } }));
   row.appendChild(makeEl('div', { cls: 'breach-actions' }));
   return row;
 }
@@ -3464,7 +3477,9 @@ function makeBreachRow(index, name, sizeBytes) {
 function setBreachRowState(row, state, statusKey) {
   row.classList.remove('queued', 'breaching', 'breached', 'failed');
   row.classList.add(state);
-  row.querySelector('.breach-status').textContent = t(statusKey);
+  const statusEl = row.querySelector('.breach-status');
+  statusEl.textContent = t(statusKey);
+  statusEl.setAttribute('data-i18n', statusKey);  // keep the i18n key in sync with the live state
 }
 
 function updateBundleCounter(done, total) {
@@ -3635,9 +3650,10 @@ $('#btnBreachAll').addEventListener('click', async () => {
       stats.appendChild(makeEl('span', { cls: 'recovered', text: fmtBytes(r.byteCount) }));
       const actions = row.querySelector('.breach-actions');
       while (actions.firstChild) actions.removeChild(actions.firstChild);
-      const saveBtn = makeEl('button', { cls: 'mini-btn', text: t('mini.save') });
+      // data-i18n on Save / Preview so language toggle re-translates them
+      const saveBtn = makeEl('button', { cls: 'mini-btn', text: t('mini.save'), attrs: { 'data-i18n': 'mini.save' } });
       saveBtn.addEventListener('click', () => saveBreachedResult(r));
-      const prevBtn = makeEl('button', { cls: 'mini-btn', text: t('mini.preview') });
+      const prevBtn = makeEl('button', { cls: 'mini-btn', text: t('mini.preview'), attrs: { 'data-i18n': 'mini.preview' } });
       prevBtn.addEventListener('click', () => previewBreachedResult(r, row, prevBtn));
       actions.appendChild(saveBtn);
       actions.appendChild(prevBtn);
