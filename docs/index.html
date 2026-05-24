@@ -1327,6 +1327,239 @@ header.callsign::after {
   box-shadow: 0 0 8px var(--gold-glow);
 }
 
+/* ============================================================
+   BREACH BUNDLE — multi-cipher receive view, the mirror of
+   seal-list. Activates when receiver pastes a JSON bundle. Same
+   row geometry as .seal-row but flipped axis: rows enter from
+   the right, state border lives on the right edge, working-state
+   pulses silver-chrome (decoding) instead of gold (forging).
+   ============================================================ */
+.breach-bundle {
+  margin-top: 10px;
+  margin-bottom: 18px;
+}
+.bundle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  background: linear-gradient(90deg,
+    rgba(200, 204, 212, 0.04) 0%,
+    rgba(20, 6, 10, 0.65) 60%);
+  border: 1px solid var(--ash-dim);
+  border-left: 2px solid var(--silver);
+  border-radius: 1px;
+  font-family: 'JetBrains Mono', monospace;
+  position: relative;
+  overflow: hidden;
+}
+.bundle-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0,
+    transparent 2px,
+    rgba(200, 204, 212, 0.03) 2px,
+    rgba(200, 204, 212, 0.03) 3px
+  );
+  pointer-events: none;
+}
+.bundle-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  position: relative;
+}
+.bundle-prefix {
+  color: var(--silver-bright);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+.bundle-tick {
+  color: var(--red);
+  font-size: 10px;
+  animation: bundleTickPulse 2.4s ease-in-out infinite;
+}
+@keyframes bundleTickPulse {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
+}
+.bundle-summary {
+  color: var(--silver);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bundle-counter {
+  color: var(--silver-dim);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  position: relative;
+}
+
+.breach-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.breach-row {
+  display: grid;
+  grid-template-columns: 12px 28px 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(20, 6, 10, 0.55);
+  border: 1px solid var(--strut);
+  border-right: 2px solid var(--ash-dim);
+  border-radius: 1px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  transition: border-color 0.3s ease, background 0.3s ease;
+  animation: breachRowIn 0.4s ease backwards;
+}
+@keyframes breachRowIn {
+  0%   { opacity: 0; transform: translateX(6px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+.breach-row.queued    { border-right-color: var(--ash-dim); }
+.breach-row.breaching {
+  border-right-color: var(--silver-bright);
+  background: linear-gradient(90deg,
+    rgba(20, 6, 10, 0.55) 70%,
+    rgba(200, 204, 212, 0.06));
+}
+.breach-row.breached  { border-right-color: var(--ember-glow); }
+.breach-row.failed    {
+  border-right-color: var(--ember);
+  background: rgba(58, 11, 20, 0.4);
+}
+.breach-row.active {
+  border-right-width: 3px;
+  background: linear-gradient(90deg,
+    rgba(255, 85, 102, 0.05),
+    rgba(20, 6, 10, 0.55) 40%);
+}
+.breach-active-caret {
+  width: 8px;
+  height: 1px;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+.breach-row.active .breach-active-caret {
+  width: 8px;
+  height: 8px;
+  background: var(--ember-glow);
+  clip-path: polygon(0 50%, 100% 0, 100% 100%);
+  box-shadow: 0 0 8px var(--ember-soft);
+}
+
+.breach-row .breach-idx {
+  color: var(--silver-dim);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.breach-row .breach-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.breach-row .breach-name {
+  color: var(--silver-bright);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.breach-row .breach-stats {
+  color: var(--silver-dim);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.breach-row .breach-stats .arrow { color: var(--silver); margin: 0 6px; }
+.breach-row .breach-stats .recovered { color: var(--ember-glow); }
+
+.breach-row .breach-status {
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 1px;
+  white-space: nowrap;
+}
+.breach-row.queued    .breach-status {
+  color: var(--silver-dim);
+  border: 1px solid var(--silver-dim);
+}
+.breach-row.breaching .breach-status {
+  color: var(--silver-bright);
+  border: 1px solid var(--silver-bright);
+  animation: breachStatusPulse 1.2s ease-in-out infinite;
+}
+@keyframes breachStatusPulse {
+  0%, 100% { box-shadow: 0 0 0 var(--silver-soft); }
+  50%      { box-shadow: 0 0 12px var(--silver-soft); }
+}
+.breach-row.breached  .breach-status {
+  color: var(--ember-glow);
+  border: 1px solid var(--ember-glow);
+  background: rgba(255, 85, 102, 0.08);
+}
+.breach-row.failed    .breach-status {
+  color: var(--ember);
+  border: 1px solid var(--ember);
+}
+.breach-row .breach-actions {
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.breach-row.breached .breach-actions,
+.breach-row:hover .breach-actions {
+  opacity: 1;
+}
+.breach-row .mini-btn {
+  background: transparent;
+  border: 1px solid var(--ash-dim);
+  color: var(--silver);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 1px;
+  transition: all 0.18s ease;
+}
+.breach-row .mini-btn:hover {
+  border-color: var(--ember-glow);
+  color: var(--ember-glow);
+  background: rgba(255, 85, 102, 0.06);
+  box-shadow: 0 0 8px var(--ember-soft);
+}
+.breach-row .mini-btn.active-preview {
+  border-color: var(--ember);
+  color: var(--ember-glow);
+  background: rgba(255, 26, 58, 0.08);
+}
+
 /* Multi-file meta — list of locked targets shown in dropzone */
 .enc-target-list {
   display: flex;
@@ -1839,12 +2072,31 @@ footer .codename::before { content: '◢ '; color: var(--red); }
       <div class="file-meta hidden" id="decMeta"></div>
     </div>
 
+    <!-- BUNDLE BREACH (multi-cipher) — hidden until a JSON bundle is detected on paste/drop -->
+    <div class="breach-bundle hidden" id="breachBundle">
+      <div class="bundle-header">
+        <div class="bundle-title">
+          <span class="bundle-prefix" data-i18n="bundle.prefix">// INTERCEPT BUNDLE</span>
+          <span class="bundle-tick" aria-hidden="true">✦</span>
+          <span class="bundle-summary" id="bundleSummary"></span>
+        </div>
+        <span class="bundle-counter" id="bundleCounter">// 0 / 0</span>
+      </div>
+      <div class="breach-list" id="breachList"></div>
+    </div>
+
     <div class="section-label" data-i18n="sec.cipher">Cipher Lock :: 6 Word Authorization</div>
     <div class="cipher-grid" id="decCipher"></div>
 
     <div class="btn-row">
       <button class="btn strike" id="btnDecrypt" data-i18n="btn.breach">Breach Transmission</button>
+      <button class="btn strike hidden" id="btnBreachAll" data-i18n="btn.breachAll">Breach All</button>
       <button class="btn ghost" id="btnDecReset" data-i18n="btn.reset">Reset</button>
+    </div>
+
+    <div class="btn-row hidden" id="breachBundleFooter" style="margin-top: 14px;">
+      <button class="btn ghost" id="btnSaveAllBreached" data-i18n="btn.saveAllRecovered">Save All Recovered</button>
+      <button class="btn ghost" id="btnCopyAllFilenames" data-i18n="btn.copyAllFilenames">Copy All Filenames</button>
     </div>
 
     <div class="progress hidden" id="decProgress"><div class="progress-fill"></div></div>
@@ -1971,6 +2223,28 @@ const I18N = {
     'toast.replaceNotSupported': 'Replace requires a Chromium browser (Chrome / Edge / Opera / Brave).',
     'toast.noCipher':         'No cipher input.',
     'toast.downloadStart':    'Download initiated.',
+    // Bundle breach (multi-cipher receive)
+    'bundle.prefix':          '// INTERCEPT BUNDLE',
+    'btn.breachAll':          'Breach All',
+    'btn.saveAllRecovered':   'Save All Recovered',
+    'btn.copyAllFilenames':   'Copy All Filenames',
+    'mini.preview':           'Preview',
+    'breach.status.queued':    'QUEUED',
+    'breach.status.breaching': 'BREACHING',
+    'breach.status.breached':  'BREACHED',
+    'breach.status.failed':    'FAILED',
+    'bundle.summary':         (n, sz) => `${n} transmission${n > 1 ? 's' : ''} · ${sz} encrypted intel`,
+    'bundle.counter':         (done, total) => `// ${done} / ${total}`,
+    'toast.bundleDetected':   (n) => `Intercept bundle detected — ${n} transmission${n > 1 ? 's' : ''}.`,
+    'toast.bundleBreachStart':(n) => `Breaching ${n} transmission${n > 1 ? 's' : ''}…`,
+    'toast.bundleBreachOk':   (ok, total) => `Breached ${ok} of ${total} transmissions.`,
+    'toast.bundleBreachPartial':(ok, total) => `Breached ${ok}/${total} — ${total - ok} failed.`,
+    'toast.bundleEmpty':      'Bundle has no valid entries.',
+    'toast.savingAllRecovered':(n) => `Saving ${n} recovered file${n > 1 ? 's' : ''}.`,
+    'toast.copiedFilenames':  (n) => `Copied ${n} filename${n > 1 ? 's' : ''}.`,
+    'toast.previewLoaded':    (name) => `Previewing: ${name}`,
+    'err.bundleEmpty':        'Bundle has no entries.',
+    'err.bundleBadEntry':     (i) => `Entry ${i + 1} is missing cipher field.`,
   },
   zh: {
     'sec.payload':  '装载目标',
@@ -2015,6 +2289,28 @@ const I18N = {
     'toast.replaceNotSupported': '替换功能需要 Chromium 内核浏览器（Chrome / Edge / Opera / Brave）。',
     'toast.noCipher':         '未输入密文。',
     'toast.downloadStart':    '已开始下载。',
+    // 批量破封（多密文接收）
+    'bundle.prefix':          '// 拦截到密文包',
+    'btn.breachAll':          '全部破封',
+    'btn.saveAllRecovered':   '全部保存还原文件',
+    'btn.copyAllFilenames':   '复制全部文件名',
+    'mini.preview':           '预览',
+    'breach.status.queued':    '待破封',
+    'breach.status.breaching': '破封中',
+    'breach.status.breached':  '已破封',
+    'breach.status.failed':    '失败',
+    'bundle.summary':         (n, sz) => `${n} 个密文 · 共 ${sz} 加密载荷`,
+    'bundle.counter':         (done, total) => `// ${done} / ${total}`,
+    'toast.bundleDetected':   (n) => `检测到密文包 —— ${n} 个密文。`,
+    'toast.bundleBreachStart':(n) => `开始破封 ${n} 个密文…`,
+    'toast.bundleBreachOk':   (ok, total) => `已破封 ${ok}/${total}。`,
+    'toast.bundleBreachPartial':(ok, total) => `已破封 ${ok}/${total} — ${total - ok} 个失败。`,
+    'toast.bundleEmpty':      '密文包内没有有效条目。',
+    'toast.savingAllRecovered':(n) => `正在保存 ${n} 个还原文件。`,
+    'toast.copiedFilenames':  (n) => `已复制 ${n} 个文件名。`,
+    'toast.previewLoaded':    (name) => `正在预览：${name}`,
+    'err.bundleEmpty':        '密文包内没有任何条目。',
+    'err.bundleBadEntry':     (i) => `第 ${i + 1} 项缺少 cipher 字段。`,
   },
 };
 
@@ -2863,8 +3159,7 @@ $('#btnFetchUrl').addEventListener('click', async () => {
   try {
     const result = await fetchCipherFromUrl(raw);
     const { text, finalUrl, rewrote, viaProxy, inflated, inflationRatio, encoding, wireBytes, decodedBytes } = result;
-    fullCipherIn = text.trim();
-    $('#decInput').value = buildOutputPreview(fullCipherIn, null);
+    ingestCipherText(text);
     const tags = [];
     if (rewrote) tags.push('rewrote');
     if (viaProxy) tags.push('via proxy');
@@ -2899,8 +3194,7 @@ decDrop.addEventListener('click', () => decFileInput.click());
 decFileInput.addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
   const text = await f.text();
-  fullCipherIn = text.trim();
-  $('#decInput').value = buildOutputPreview(fullCipherIn, null);
+  ingestCipherText(text);
   decDrop.classList.add('armed');
   setFileMeta(decMeta, f);
 });
@@ -2915,8 +3209,7 @@ decDrop.addEventListener('drop', async e => {
   e.preventDefault();
   const file = e.dataTransfer.files[0]; if (!file) return;
   const text = await file.text();
-  fullCipherIn = text.trim();
-  $('#decInput').value = buildOutputPreview(fullCipherIn, null);
+  ingestCipherText(text);
   decDrop.classList.add('armed');
   setFileMeta(decMeta, file);
 });
@@ -2927,17 +3220,23 @@ decDrop.addEventListener('drop', async e => {
    short ciphers stays natural. */
 $('#decInput').addEventListener('paste', e => {
   const pasted = (e.clipboardData || window.clipboardData)?.getData('text') || '';
-  if (pasted.length > 50000) {
+  // Always check for bundle JSON, even on small pastes — a 7-cipher bundle
+  // can easily be under 50k chars. Large pastes also route here to avoid
+  // freezing the textarea.
+  const trimmed = pasted.trim();
+  if (trimmed.startsWith('[') || pasted.length > 50000) {
     e.preventDefault();
-    fullCipherIn = pasted.trim();
-    $('#decInput').value = buildOutputPreview(fullCipherIn, null);
+    ingestCipherText(pasted);
   }
 });
 
 /* Programmatic .value assignment doesn't fire 'input', but human typing does.
    So this only fires when the user manually edits the textarea, at which point
-   the cached cipher is stale and must be discarded. */
-$('#decInput').addEventListener('input', () => { fullCipherIn = ''; });
+   the cached cipher and any active bundle are stale and must be discarded. */
+$('#decInput').addEventListener('input', () => {
+  fullCipherIn = '';
+  if (breachBundle) disarmBundle({ keepTextarea: true, silent: true });
+});
 
 $('#btnDecrypt').addEventListener('click', async () => {
   const b64 = fullCipherIn || $('#decInput').value.trim();
@@ -3063,9 +3362,310 @@ $('#btnDecReset').addEventListener('click', () => {
   decMeta.classList.add('hidden');
   $$('#decCipher input').forEach(i => i.value = '');
   $('#decPreview').classList.add('hidden');
-  if (lastDecrypted?.url) URL.revokeObjectURL(lastDecrypted.url);
+  // lastDecrypted may point at a bundle-owned URL — bundle owns its blobs, so
+  // only revoke if it's a single-cipher result (not in breachBundleResults).
+  if (lastDecrypted?.url && !breachBundleResults.some(r => r?.url === lastDecrypted.url)) {
+    URL.revokeObjectURL(lastDecrypted.url);
+  }
   lastDecrypted = null;
   fullCipherIn = '';
+  disarmBundle({ silent: true });
+});
+
+/* ====== BUNDLE BREACH (multi-cipher receive) ======
+   Sender produces a JSON array via "Copy All as JSON":
+     [{"filename":"x.jpg","cipher":"AAEC..."}, ...]
+   On the receive side, we detect this shape on paste / drop / fetch and
+   switch into bundle mode — rendering a breach-list (mirror of seal-list)
+   with per-row state, one Breach All button, and parallel decrypt.
+
+   Salt sharing optimization: a single seal batch produces N packets with
+   the SAME salt (single PBKDF2 → many AES encrypts). So a bundle from
+   one batch needs ONE deriveKey call. We group entries by salt-hex and
+   derive once per group. Mixed bundles (multiple batches) still derive
+   per group, all in parallel. */
+let breachBundle = null;       // [{filename, b64}, ...] queued for Breach All
+let breachBundleResults = [];  // [{ok, filename, mime, blob, url, byteCount, rowIdx, error?}, ...]
+let activeBundleRow = null;
+
+function tryParseBundle(text) {
+  if (!text) return null;
+  const trimmed = text.trim();
+  // Quick prefilter: bundle is a JSON array — must start with [
+  if (trimmed.length < 4 || trimmed[0] !== '[') return null;
+  let arr;
+  try { arr = JSON.parse(trimmed); } catch { return null; }
+  if (!Array.isArray(arr) || arr.length === 0) return null;
+  for (const e of arr) {
+    if (!e || typeof e !== 'object') return null;
+    if (typeof e.cipher !== 'string' || !e.cipher) return null;
+  }
+  return arr;
+}
+
+function parsePacketBytes(bytes) {
+  if (bytes.length < 4 + 1 + SALT_LEN + IV_LEN + 16) throw new Error('Packet too small or malformed.');
+  for (let i = 0; i < 4; i++) if (bytes[i] !== MAGIC[i]) throw new Error('Magic mismatch — not a Sky Striker packet.');
+  const version = bytes[4];
+  if (version !== VERSION) {
+    if (version === 0x01) throw new Error('Legacy v1 packet — this build cannot decrypt pre-pepper transmissions.');
+    throw new Error(`Unsupported version 0x${version.toString(16)}.`);
+  }
+  const salt = bytes.subarray(5, 5 + SALT_LEN);
+  const iv = bytes.subarray(5 + SALT_LEN, 5 + SALT_LEN + IV_LEN);
+  const cipher = bytes.subarray(5 + SALT_LEN + IV_LEN);
+  return { salt, iv, cipher, version };
+}
+
+function bytesToHex(bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i++) s += bytes[i].toString(16).padStart(2, '0');
+  return s;
+}
+
+function makeBreachRow(index, name, sizeBytes) {
+  const row = makeEl('div', { cls: 'breach-row queued', attrs: { 'data-name': name } });
+  row.appendChild(makeEl('span', { cls: 'breach-active-caret', attrs: { 'aria-hidden': 'true' } }));
+  row.appendChild(makeEl('span', { cls: 'breach-idx', text: String(index + 1).padStart(2, '0') }));
+  const info = makeEl('div', { cls: 'breach-info' });
+  info.appendChild(makeEl('div', { cls: 'breach-name', text: name, attrs: { title: name } }));
+  info.appendChild(makeEl('div', { cls: 'breach-stats', text: fmtBytes(sizeBytes) }));
+  row.appendChild(info);
+  row.appendChild(makeEl('span', { cls: 'breach-status', text: t('breach.status.queued') }));
+  row.appendChild(makeEl('div', { cls: 'breach-actions' }));
+  return row;
+}
+
+function setBreachRowState(row, state, statusKey) {
+  row.classList.remove('queued', 'breaching', 'breached', 'failed');
+  row.classList.add(state);
+  row.querySelector('.breach-status').textContent = t(statusKey);
+}
+
+function updateBundleCounter(done, total) {
+  $('#bundleCounter').textContent = t('bundle.counter', done, total);
+}
+
+function armBundle(entries) {
+  // Revoke any prior bundle blob URLs first
+  disarmBundle({ keepTextarea: true, silent: true });
+
+  // Rough size estimate — b64 char count × 3/4 ≈ binary bytes
+  const totalChars = entries.reduce((acc, e) => acc + e.cipher.length, 0);
+  const approxBytes = Math.floor(totalChars * 0.75);
+
+  breachBundle = entries.map((e, i) => ({
+    filename: e.filename || `transmission_${String(i + 1).padStart(2, '0')}.bin`,
+    b64: e.cipher.replace(/\s+/g, ''),
+  }));
+
+  $('#breachBundle').classList.remove('hidden');
+  $('#bundleSummary').textContent = t('bundle.summary', breachBundle.length, fmtBytes(approxBytes));
+  updateBundleCounter(0, breachBundle.length);
+
+  $('#btnDecrypt').classList.add('hidden');
+  $('#btnBreachAll').classList.remove('hidden');
+  $('#breachBundleFooter').classList.add('hidden');
+
+  // Single-cipher preview gets out of the way until user clicks Preview on a row
+  $('#decPreview').classList.add('hidden');
+  if (lastDecrypted?.url) { URL.revokeObjectURL(lastDecrypted.url); lastDecrypted = null; }
+
+  const list = $('#breachList');
+  while (list.firstChild) list.removeChild(list.firstChild);
+  breachBundle.forEach((e, i) => {
+    list.appendChild(makeBreachRow(i, e.filename, Math.floor(e.b64.length * 0.75)));
+  });
+
+  toast(t('toast.bundleDetected', breachBundle.length), 'ok', 'intercept');
+}
+
+function disarmBundle({ keepTextarea = false, silent = false } = {}) {
+  breachBundleResults.forEach(r => { if (r?.url) URL.revokeObjectURL(r.url); });
+  breachBundleResults = [];
+  breachBundle = null;
+  activeBundleRow = null;
+
+  $('#breachBundle').classList.add('hidden');
+  $('#breachBundleFooter').classList.add('hidden');
+  $('#btnDecrypt').classList.remove('hidden');
+  $('#btnBreachAll').classList.add('hidden');
+
+  const list = $('#breachList');
+  while (list.firstChild) list.removeChild(list.firstChild);
+
+  if (!keepTextarea) {
+    $('#decInput').value = '';
+    fullCipherIn = '';
+  }
+}
+
+// All bulk text loads route through here: paste, drop file, fetch URL.
+// If it parses as a bundle, switch to bundle mode. Otherwise fall back
+// to the existing single-cipher path.
+function ingestCipherText(text) {
+  const entries = tryParseBundle(text);
+  if (entries) {
+    armBundle(entries);
+    return 'bundle';
+  }
+  disarmBundle({ keepTextarea: true, silent: true });
+  fullCipherIn = text.trim();
+  $('#decInput').value = buildOutputPreview(fullCipherIn, null);
+  return 'single';
+}
+
+$('#btnBreachAll').addEventListener('click', async () => {
+  if (!breachBundle || !breachBundle.length) return toast(t('toast.bundleEmpty'), 'err', 'abort');
+  const words = readCipherWords($('#decCipher'));
+  const btn = $('#btnBreachAll');
+  const progress = $('#decProgress');
+  btn.disabled = true;
+  setProgress(progress, 5);
+  const rows = $$('#breachList .breach-row');
+  const currentTheme = document.documentElement.getAttribute('data-theme') || ACE_DEFAULT;
+  const pepper = ACE_PEPPERS[currentTheme] || ACE_PEPPERS[ACE_DEFAULT];
+
+  // Phase 1: parse every packet. Bad packets fail at this stage and never reach decrypt.
+  const parsed = breachBundle.map((entry, i) => {
+    try {
+      const bytes = b64ToBytes(entry.b64);
+      const p = parsePacketBytes(bytes);
+      return { ok: true, entry, parsed: p, rowIdx: i };
+    } catch (err) {
+      return { ok: false, entry, error: err.message || 'parse failed', rowIdx: i };
+    }
+  });
+  parsed.forEach(p => {
+    if (!p.ok) {
+      setBreachRowState(rows[p.rowIdx], 'failed', 'breach.status.failed');
+      rows[p.rowIdx].querySelector('.breach-stats').textContent = p.error;
+    }
+  });
+
+  // Phase 2: group successful entries by salt hex → one PBKDF2 per unique salt.
+  const groups = new Map();
+  parsed.filter(p => p.ok).forEach(p => {
+    const key = bytesToHex(p.parsed.salt);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(p);
+  });
+
+  if (groups.size === 0) {
+    setProgress(progress, 100);
+    btn.disabled = false;
+    return toast(t('toast.bundleEmpty'), 'err', 'abort');
+  }
+
+  toast(t('toast.bundleBreachStart', parsed.filter(p => p.ok).length), 'ok', 'breach');
+  setProgress(progress, 15);
+
+  // Phase 3: derive one key per unique salt group, in parallel.
+  let derived = 0;
+  const totalGroups = groups.size;
+  const keyByGroup = new Map();
+  await Promise.all([...groups.entries()].map(async ([saltHex, items]) => {
+    const key = await deriveKey(words, items[0].parsed.salt, pepper);
+    keyByGroup.set(saltHex, key);
+    derived++;
+    setProgress(progress, 15 + Math.floor((derived / totalGroups) * 25));
+  }));
+  setProgress(progress, 45);
+
+  // Phase 4: flip queued rows to breaching, then decrypt in parallel.
+  parsed.filter(p => p.ok).forEach(p => setBreachRowState(rows[p.rowIdx], 'breaching', 'breach.status.breaching'));
+
+  let done = 0, ok = 0;
+  const results = await Promise.all(parsed.map(async (p) => {
+    if (!p.ok) { done++; return { ok: false, error: p.error, filename: p.entry.filename, rowIdx: p.rowIdx }; }
+    try {
+      const key = keyByGroup.get(bytesToHex(p.parsed.salt));
+      const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: p.parsed.iv }, key, p.parsed.cipher);
+      const plain = new Uint8Array(plainBuf);
+      const meta = unpackMetadata(plain);
+      const blob = new Blob([meta.fileBytes], { type: meta.mime || 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      done++; ok++;
+      setProgress(progress, 45 + Math.floor((done / parsed.length) * 50));
+      updateBundleCounter(ok, breachBundle.length);
+      return { ok: true, filename: meta.filename || p.entry.filename, mime: meta.mime, blob, url, byteCount: meta.fileBytes.length, rowIdx: p.rowIdx };
+    } catch (err) {
+      done++;
+      setProgress(progress, 45 + Math.floor((done / parsed.length) * 50));
+      return { ok: false, error: 'wrong words, wrong mode, or tampered packet', filename: p.entry.filename, rowIdx: p.rowIdx };
+    }
+  }));
+  setProgress(progress, 100);
+  breachBundleResults = results;
+
+  // Phase 5: final row updates + action buttons on breached rows.
+  results.forEach(r => {
+    const row = rows[r.rowIdx];
+    if (r.ok) {
+      setBreachRowState(row, 'breached', 'breach.status.breached');
+      const stats = row.querySelector('.breach-stats');
+      while (stats.firstChild) stats.removeChild(stats.firstChild);
+      stats.appendChild(document.createTextNode(fmtBytes(Math.floor(breachBundle[r.rowIdx].b64.length * 0.75))));
+      stats.appendChild(makeEl('span', { cls: 'arrow', text: '→' }));
+      stats.appendChild(makeEl('span', { cls: 'recovered', text: fmtBytes(r.byteCount) }));
+      const actions = row.querySelector('.breach-actions');
+      while (actions.firstChild) actions.removeChild(actions.firstChild);
+      const saveBtn = makeEl('button', { cls: 'mini-btn', text: t('mini.save') });
+      saveBtn.addEventListener('click', () => saveBreachedResult(r));
+      const prevBtn = makeEl('button', { cls: 'mini-btn', text: t('mini.preview') });
+      prevBtn.addEventListener('click', () => previewBreachedResult(r, row, prevBtn));
+      actions.appendChild(saveBtn);
+      actions.appendChild(prevBtn);
+    } else if (!row.classList.contains('failed')) {
+      setBreachRowState(row, 'failed', 'breach.status.failed');
+      row.querySelector('.breach-stats').textContent = r.error || 'failed';
+    }
+  });
+
+  $('#breachBundleFooter').classList.remove('hidden');
+  const total = breachBundle.length;
+  if (ok === total) toast(t('toast.bundleBreachOk', ok, total), 'ok', 'breach');
+  else toast(t('toast.bundleBreachPartial', ok, total), 'err', 'breach');
+
+  btn.disabled = false;
+});
+
+function saveBreachedResult(r) {
+  const a = document.createElement('a');
+  a.href = r.url;
+  a.download = r.filename;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+function previewBreachedResult(r, row, btn) {
+  $$('#breachList .breach-row.active').forEach(x => x.classList.remove('active'));
+  $$('#breachList .mini-btn.active-preview').forEach(x => x.classList.remove('active-preview'));
+  row.classList.add('active');
+  btn.classList.add('active-preview');
+  activeBundleRow = row;
+  // Bundle owns r.url — don't revoke it here when swapping previews.
+  lastDecrypted = { blob: r.blob, filename: r.filename, mime: r.mime, url: r.url };
+  renderPreview(r.filename, r.mime, r.url, r.byteCount);
+  toast(t('toast.previewLoaded', r.filename), 'ok', 'preview');
+}
+
+$('#btnSaveAllBreached').addEventListener('click', () => {
+  const ok = breachBundleResults.filter(r => r.ok);
+  if (!ok.length) return toast(t('toast.nothingSave'), 'err', 'abort');
+  ok.forEach((r, i) => setTimeout(() => saveBreachedResult(r), i * 120));
+  toast(t('toast.savingAllRecovered', ok.length), 'ok', 'save');
+});
+
+$('#btnCopyAllFilenames').addEventListener('click', async () => {
+  const ok = breachBundleResults.filter(r => r.ok);
+  if (!ok.length) return toast(t('toast.nothingCopy'), 'err', 'abort');
+  const text = ok.map(r => r.filename).join('\n');
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(t('toast.copiedFilenames', ok.length), 'ok', 'copy');
+  } catch {
+    toast(t('toast.clipboardBlocked'), 'err', 'copy');
+  }
 });
 
 /* ====== LANG TOGGLE WIRING ====== */
