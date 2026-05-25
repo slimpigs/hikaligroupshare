@@ -39,30 +39,46 @@ So when you share a sealed file, tell the recipient *which mode you sealed it in
 
 ## How to use
 
-### Sealing a file (sender)
+### Sealing files (sender)
 
 1. Open the [relay page](https://slimpigs.github.io/hikaligroupshare/).
 2. **Pick your ace mode** in the ACE SELECT rail at the top. Remember it — you'll tell the recipient.
 3. Stay on the **SEAL** tab (Loadout 01).
-4. Drop image / video / any file(s) onto the panel, or click to pick. Multiple files OK, they seal in parallel. Max ~80 MB each.
+4. Drop one or more files onto the panel, or click to pick. Multiple files seal in parallel. File size is bounded only by your browser's memory budget (hundreds of MB per file work on desktop).
 5. Fill in your **6 cipher words** in the lock grid. This is the passphrase — share it with the recipient through a **different channel** from the ciphertext.
-6. Click **Engage Seal**. After a moment the sealed transmissions appear, one row per file.
-7. Click **Save** on each row to write `.ssae.txt` to disk, or **Save All** to download all. **Copy** copies a single cipher to clipboard; **Copy All as JSON** bundles them all as a single chat-friendly blob. Then host the file(s) and send the link(s).
-8. **Tell the recipient three things:** the 6 cipher words, the ace mode you sealed in, and where to fetch the `.ssae.txt`.
+6. Click **Engage Seal**. The MUSE/RZ-7 chip above the tabs pulses red while AES-GCM is running; after a moment the sealed transmissions appear, one row per file.
+7. Per-row buttons:
+   - **Copy** — copy this cipher to clipboard
+   - **Save** — download as `<original>.ssae.txt`
+   - **Replace** *(Chrome / Edge / Opera / Brave only)* — overwrite the original file in place with the sealed version
 
-### Breaching a file (recipient)
+   Batch buttons (bottom):
+   - **Save All** — downloads every `.ssae.txt` sequentially
+   - **Copy All as JSON** — bundles every cipher into a single chat-friendly JSON blob
+   - **Save All as JSON** — downloads that bundle as one `.json` file (use this when the bundle is too big for the clipboard)
+
+   Then host the file(s) wherever and send the link(s).
+8. **Tell the recipient three things:** the 6 cipher words, the ace mode you sealed in, and where to fetch the ciphertext (a single `.ssae.txt`, a folder of them, or the bundle `.json`).
+
+### Breaching files (recipient)
 
 1. Open the [relay page](https://slimpigs.github.io/hikaligroupshare/).
 2. **Set the ACE SELECT to the same mode the sender used.** This is required — wrong mode will fail to decrypt.
 3. Switch to the **BREACH** tab (Loadout 02).
-4. Choose one:
-   - Paste the URL of the `.ssae.txt` into the URL field and click **Fetch**, **or**
-   - Paste the ciphertext directly into the input box, **or**
-   - Drop the downloaded `.ssae.txt` onto the panel.
+4. Get the ciphertext into the page — pick whichever fits:
+   - **Single cipher**: paste a `.ssae.txt` URL into the URL field and click **Fetch**, paste the ciphertext directly into the input box, or drop the downloaded `.ssae.txt` onto the panel.
+   - **Bundle (multi-cipher)**: paste the JSON bundle from "Copy All as JSON", or drop a `.json` bundle file onto the panel. The page detects the bundle and switches into multi-cipher mode automatically — you'll see every cipher listed as a row.
 5. Type the same **6 cipher words** the sender gave you. Order matters.
-6. Click **Breach Transmission**. The recovered file previews in the panel; click **Download Recovered File** to save it locally.
+6. Click **Breach Transmission** (single) or **Breach All** (bundle).
+   - **Single**: recovered file previews in the panel; click **Download Recovered File** to save.
+   - **Bundle**: each row decrypts in parallel and gets **Save** + **Preview** buttons. Footer has **Save All Recovered** and **Copy All Filenames**.
 
 If breach fails with *"sealed under a different ace mode"*, switch the ACE SELECT to the mode the sender used and try again.
+
+## Other UI notes
+
+- **Language toggle**: top-right of the ACE SELECT rail. Click **中文 / EN** to swap the UI language. The choice persists across visits.
+- **MUSE/RZ-7 chip** between the header and tabs is the visual processor — it pulses red and runs a scan-line sweep while seal / breach is actually working. The bus rails above and below it flow rightward during SEAL, leftward during BREACH.
 
 ## Technical details
 
@@ -71,7 +87,9 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 - **Salt / IV:** randomly generated per encryption (16 / 12 bytes)
 - **Per-mode pepper:** each ace mode has its own secret pepper baked into the page and appended to the password before PBKDF2. Six modes → six separate encryption namespaces. The mode therefore acts as a second factor.
 - **Parallel sealing:** multi-file batches derive the AES key once and encrypt all files in parallel with unique IVs, giving near-linear speedup.
+- **Parallel breaching:** when a JSON bundle is loaded, the receiver groups ciphers by salt (one PBKDF2 per unique salt — usually just one for a same-batch bundle), then runs all AES-GCM decrypts in parallel.
 - **Packet format:** `MAGIC(4) | VERSION(1) | SALT(16) | IV(12) | CIPHERTEXT`, base64-encoded. Version = 0x02.
+- **Bundle format:** `[{"filename": "...", "cipher": "..."}, ...]` — a plain JSON array of single-cipher entries. Saved as `skystriker-bundle-<ISO-timestamp>-<N>files.json`.
 - **Zero network during crypto.** No server calls during encrypt or decrypt. Your words never leave your browser.
 
 ## Please read before using
@@ -80,7 +98,7 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 - **Tell the recipient three things:** the 6 cipher words, the **ace mode** used at seal time, and where to fetch the ciphertext.
 - **Send all three through different channels** if you can. If words + ciphertext + mode all land in the same chat, the encryption protects you from almost nothing.
 - **Do not use this tool for any illegal purpose.** It exists for sharing personal AI-generated anime art among a small private group. Using it to transmit illegal content, harass anyone, distribute material that violates someone's rights, or break local laws is against the spirit of this project. Any such use is entirely the user's responsibility — not the author's.
-- Max file size is around 80 MB per file (browser memory limit).
+- File size is bounded only by your browser's memory budget. Desktop Chrome/Firefox routinely handle several hundred MB per file; mobile browsers cap lower (~150 MB on iOS Safari is typical).
 
 ---
 
@@ -125,30 +143,46 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 
 ## 使用方法
 
-### 加密（发送方）
+### 封印（发送方）
 
 1. 打开[中继页面](https://slimpigs.github.io/hikaligroupshare/)。
 2. **在顶部 ACE SELECT 栏选好 ace 模式**。记住它 —— 等下要告诉接收方。
 3. 停留在 **SEAL（封印）** 标签页（Loadout 01）。
-4. 拖入图片 / 视频 / 任意文件，或点击面板选择。**可同时拖入多个文件**，会并行加密。每个文件最大约 80 MB。
+4. 拖入一个或多个文件，或点击面板选择。多文件并行加密。单文件大小仅受浏览器内存限制（桌面端通常能处理几百 MB）。
 5. 在密码格中填入你的 **6 个密码词**。这就是密钥 —— 请通过和密文**不同的渠道**告诉接收方。
-6. 点击 **Engage Seal**。稍等片刻，加密结果会以列表形式出现，每个文件一行。
-7. 每行的 **Save** 按钮保存单个 `.ssae.txt`，**Save All** 批量下载全部；**Copy** 复制单个密文，**Copy All as JSON** 把所有密文打包成一段 JSON 方便发到聊天里。然后把文件托管到任何地方，把直链发给对方。
-8. **告诉接收方三样**：6 个密码词、你加密时所在的 ace 模式、密文的获取地址。
+6. 点击 **Engage Seal**。标签页上方的 MUSE/RZ-7 芯片会在 AES-GCM 运行时变红脉动；稍等片刻加密结果出现，每个文件一行。
+7. 每行三个按钮：
+   - **Copy** —— 复制密文到剪贴板
+   - **Save** —— 下载为 `<原文件名>.ssae.txt`
+   - **Replace** *(仅限 Chrome / Edge / Opera / Brave)* —— 就地覆盖原始文件为封印版
 
-### 解密（接收方）
+   下方批量按钮：
+   - **Save All** —— 依次下载所有 `.ssae.txt`
+   - **Copy All as JSON** —— 把所有密文打包成一段 JSON 方便发到聊天里
+   - **Save All as JSON** —— 把这个包下载为一个 `.json` 文件（密文包太大不能粘贴时用这个）
+
+   然后把文件托管到任何地方，把链接发给对方。
+8. **告诉接收方三样**：6 个密码词、你加密时所在的 ace 模式、密文的获取地址（单个 `.ssae.txt`、一组 `.ssae.txt`，或密文包 `.json`）。
+
+### 破封（接收方）
 
 1. 打开[中继页面](https://slimpigs.github.io/hikaligroupshare/)。
 2. **把 ACE SELECT 切到发送方加密时使用的模式**。这一步必须做 —— 模式不对就解不开。
 3. 切到 **BREACH（破封）** 标签页（Loadout 02）。
-4. 三选一：
-   - 把 `.ssae.txt` 的链接粘到 URL 框，点 **Fetch**；
-   - 直接把密文粘进输入框；
-   - 把下载好的 `.ssae.txt` 拖到面板上。
+4. 把密文导入页面，选哪个都行：
+   - **单个密文**：粘贴 `.ssae.txt` URL 到 URL 框点 **Fetch**、直接把密文粘进输入框、或把下载好的 `.ssae.txt` 拖到面板上。
+   - **密文包（多文件）**：粘贴来自 "Copy All as JSON" 的 JSON 数组、或把 `.json` 包文件拖到面板上。页面自动识别并切换到批量模式 —— 每个密文显示为一行。
 5. 填入发送方给你的 **6 个密码词**（顺序要一致）。
-6. 点击 **Breach Transmission**。还原后的文件会在下方预览，点 **Download Recovered File** 保存到本地。
+6. 点击 **Breach Transmission**（单个）或 **Breach All**（密文包）。
+   - **单个**：还原文件在下方预览，点 **Download Recovered File** 保存。
+   - **密文包**：每行并行解密，完成后出现 **Save** + **Preview** 按钮；底部有 **Save All Recovered** 和 **Copy All Filenames**。
 
 如果报错说 *"sealed under a different ace mode"*（封印于另一 ace 模式），把 ACE SELECT 切到发送方使用的模式再试一次。
+
+## 其他界面说明
+
+- **语言切换**：ACE SELECT 栏右上角，点 **中文 / EN** 切换界面语言。选择会保存到本地。
+- **MUSE/RZ-7 芯片**位于标题和标签页之间，是视觉处理器 —— 实际封印 / 破封运行时会变红脉动并出现扫描线效果。它上下的总线在 SEAL 模式下数据右流，BREACH 模式下左流。
 
 ## 技术细节
 
@@ -157,7 +191,9 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 - **Salt 与 IV**：每次加密随机生成（16 / 12 字节）
 - **模式专属 pepper**：每个 ace 模式有自己的 pepper（密码混入串），加入到密码词中后再进行 PBKDF2。六个模式 = 六个互不兼容的加密命名空间，模式本身成为第二认证因素。
 - **并行封印**：批量上传时只推导一次 AES 密钥，所有文件用各自独立的 IV 并行加密，近似线性加速。
+- **并行破封**：加载 JSON 密文包时，接收端按 salt 分组（一组只跑一次 PBKDF2 —— 同批次封印的密文包通常只有一组），然后所有 AES-GCM 解密并行执行。
 - **数据包格式**：`MAGIC(4) | VERSION(1) | SALT(16) | IV(12) | 密文`，整体 base64 编码。Version = 0x02。
+- **密文包格式**：`[{"filename": "...", "cipher": "..."}, ...]` —— 单个密文条目的 JSON 数组。保存文件名为 `skystriker-bundle-<ISO 时间戳>-<N>files.json`。
 - **加解密过程零网络**。没有任何服务器请求，密码词不会离开你的浏览器。
 
 ## 重要提示 — 请认真阅读
@@ -166,4 +202,4 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 - **告诉接收方三样**：6 个密码词、封印时使用的 **ace 模式**、密文的获取地址。
 - **三样东西尽量分开传**。如果密码词、密文、模式三样都在同一个聊天里发出去，加密相当于没起作用。
 - **请勿用于任何非法用途**。本工具只是为了在一个小范围的私人朋友圈里分享 AI 生成的二次元插画。如果有人用它来传播违法内容、骚扰他人、侵犯他人权利、或者违反当地法律，责任完全在使用者本人，与作者无关。
-- 单个文件大小上限约 80 MB（受浏览器内存限制）。
+- 单个文件大小仅受浏览器内存限制。桌面端 Chrome/Firefox 通常可处理几百 MB；移动浏览器上限较低（iOS Safari 一般 ≤ ~150 MB）。
