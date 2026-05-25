@@ -4,6 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SKY STRIKER // ROZE / ZEKE RELAY</title>
+
+<!-- Favicons + touch icon (cyber-sigil set — theme-neutral so it reads in any ace mode) -->
+<link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="icons/icon-48.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+
+<!-- Social-share preview -->
+<meta property="og:title" content="Sky Striker // Roze / Zeke Relay">
+<meta property="og:description" content="Browser-side AES-256-GCM encryption for sharing files with a small circle of friends.">
+<meta property="og:image" content="icons/og-image.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="icons/og-image.jpg">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
@@ -1922,6 +1940,501 @@ footer .codename::before { content: '◢ '; color: var(--red); }
 
 .hidden { display: none !important; }
 
+/* ============================================================
+   CPU BAY — the chip's mounted socket, flanked by I/O buses.
+   Centerpiece between the .callsign header and the .tabs nav.
+   The image itself is untouched — all the "this is a CPU"
+   cues are this CSS: chrome socket housing, tactical readouts
+   with model numbers, bus pins with marching-ant data flow,
+   sticky-on-scroll so the chip stays present during operation.
+   ============================================================ */
+.cpu-bay {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+  margin: 14px 0 18px;
+  padding: 8px 0 10px;
+  animation: cpuBayBoot 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+@keyframes cpuBayBoot {
+  0%   { opacity: 0; transform: translateY(-6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- BUS COLUMNS — sit immediately flush against the chip's edges ---- */
+.cpu-bus {
+  display: flex;
+  flex-direction: column;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--silver-dim);
+  align-self: stretch;
+  justify-content: center;
+  padding: 4px 0;
+}
+.bus-cap {
+  font-size: 7px;
+  letter-spacing: 0.30em;
+  color: var(--silver);
+  padding: 0 2px 6px;
+  margin-bottom: 4px;
+  border-bottom: 1px dashed var(--ash-dim);
+  white-space: nowrap;
+}
+.bus-cap-dir { color: var(--red); margin: 0 3px; }
+.bus-out .bus-cap { text-align: right; }
+
+.bus-pins {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  flex: 1;
+  justify-content: center;
+}
+.bus-pins li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.bus-out .bus-pins li { justify-content: flex-end; }
+
+/* Short pin stub — sits tight against the chip edge, no big airgap.
+   Fixed length so the bus doesn't drift away from the chip. */
+.pin-stub {
+  height: 1px;
+  width: 36px;
+  background-image: repeating-linear-gradient(90deg,
+    var(--silver-dim) 0 4px,
+    transparent 4px 8px);
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+  position: relative;
+  transition: background-image 0.25s ease;
+}
+.pin-stub::after {
+  /* Pin contact dot at the chip-side end of the stub */
+  content: '';
+  position: absolute;
+  top: -2px;
+  width: 5px;
+  height: 5px;
+  background: var(--silver);
+  box-shadow: 0 0 4px var(--silver-soft);
+  border-radius: 50%;
+  transition: background 0.25s ease, box-shadow 0.25s ease;
+}
+.bus-in  .pin-stub::after { right: -3px; }
+.bus-out .pin-stub::after { left: -3px; }
+
+.pin-label {
+  color: var(--silver-dim);
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.3s ease;
+}
+
+/* ---- CENTER STACK — no socket housing, just chip + thin readouts ---- */
+.cpu-socket {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+/* Corner brackets removed visually (kept in HTML for backward compat) */
+.cs-corner { display: none; }
+
+/* Brand strip — sits above the top readout. Audiowide echoes the page title. */
+.cpu-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-family: 'Audiowide', 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+}
+.brand-prefix {
+  color: var(--silver-dim);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+}
+.brand-name {
+  font-size: 14px;
+  letter-spacing: 0.10em;
+  color: var(--silver-bright);
+  text-shadow: 0 0 10px var(--silver-soft);
+}
+.brand-suffix {
+  font-size: 9px;
+  letter-spacing: 0.32em;
+  color: var(--red);
+  padding: 1px 6px;
+  border: 1px solid var(--red);
+  border-radius: 1px;
+}
+
+/* Tactical readout strips above + below the die */
+.cpu-readout {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  width: 100%;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  background: transparent;
+  border: 0;
+}
+.cpu-readout-top    { margin-bottom: 5px; }
+.cpu-readout-bottom { margin-top:    5px; }
+.cr-label { color: var(--silver-dim); }
+.cr-val   { color: var(--silver-bright); }
+.cr-sep   { color: var(--red); opacity: 0.6; font-weight: 700; }
+
+.cr-state { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+.state-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--silver-dim);
+  box-shadow: 0 0 6px var(--silver-soft);
+  animation: stateStandby 2.4s ease-in-out infinite;
+  transition: background 0.25s ease, box-shadow 0.25s ease;
+}
+.state-text { color: var(--silver); position: relative; transition: color 0.25s ease; }
+.state-text::after {
+  content: 'ACTIVE';
+  position: absolute;
+  inset: 0;
+  color: var(--ember-glow);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+@keyframes stateStandby {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 1; }
+}
+
+/* ---- DIE (the unmodified image) ---- */
+.cpu-die {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  max-width: 100%;
+  background: var(--void);
+  box-shadow:
+    inset 0 0 14px rgba(0, 0, 0, 0.65),
+    0 0 18px rgba(88, 196, 255, 0.10);
+  transition: box-shadow 0.35s ease;
+}
+.cpu-die img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+  /* The image already has its own blue PCB border baked in.
+     We DO NOT add a border here — that would double-frame. */
+}
+/* Tiny L-bracket marks around the die corners */
+.die-mark {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--silver);
+  pointer-events: none;
+}
+.die-mark.die-mark-tl { top:    -5px; left:  -5px; border-right: 0; border-bottom: 0; }
+.die-mark.die-mark-tr { top:    -5px; right: -5px; border-left:  0; border-bottom: 0; }
+.die-mark.die-mark-bl { bottom: -5px; left:  -5px; border-right: 0; border-top:    0; }
+.die-mark.die-mark-br { bottom: -5px; right: -5px; border-left:  0; border-top:    0; }
+
+/* ============================================================
+   ACTIVE STATE — hover/focus-within triggers the choreography:
+     · state dot turns red and pulses faster
+     · pin stubs become red marching-ants flowing inward / outward
+     · die gets a stronger ambient bloom
+   ============================================================ */
+/* Marching ants run constantly (no hover needed) so the chip always reads
+   as "live". Direction depends on tab mode:
+     encode (seal):  ants flow rightward — toward the chip from the IN bus,
+                     away from the chip out the OUT bus → both rightward
+     decode (breach): ants flow leftward — cipher comes IN from the right,
+                     plaintext exits left → both leftward */
+.pin-stub {
+  background-image: repeating-linear-gradient(90deg,
+    var(--silver-dim) 0 4px,
+    transparent 4px 8px);
+  animation: stubFlowRight 1.0s linear infinite;
+}
+body[data-mode="decode"] .pin-stub {
+  animation: stubFlowLeft 1.0s linear infinite;
+}
+@keyframes stubFlowRight {
+  to { background-position-x: 8px; }
+}
+@keyframes stubFlowLeft {
+  to { background-position-x: -8px; }
+}
+
+/* On hover the ants light up red and speed up — the "actively processing" cue */
+.cpu-bay:hover .pin-stub,
+.cpu-bay:focus-within .pin-stub {
+  background-image: repeating-linear-gradient(90deg,
+    var(--red) 0 4px,
+    transparent 4px 8px);
+  animation-duration: 0.5s;
+}
+.cpu-bay:hover .pin-label,
+.cpu-bay:focus-within .pin-label { color: var(--silver-bright); }
+.cpu-bay:hover .pin-stub::after,
+.cpu-bay:focus-within .pin-stub::after {
+  background: var(--red);
+  box-shadow: 0 0 6px var(--red);
+}
+.cpu-bay:hover .state-dot,
+.cpu-bay:focus-within .state-dot {
+  background: var(--red);
+  box-shadow: 0 0 10px var(--red);
+  animation: stateActive 0.9s ease-in-out infinite;
+}
+@keyframes stateActive {
+  0%, 100% { box-shadow: 0 0 6px var(--red); }
+  50%      { box-shadow: 0 0 14px var(--red), 0 0 22px var(--red-soft); }
+}
+.cpu-bay:hover .state-text,
+.cpu-bay:focus-within .state-text { color: transparent; }
+.cpu-bay:hover .state-text::after,
+.cpu-bay:focus-within .state-text::after { opacity: 1; }
+.cpu-bay:hover .cpu-die,
+.cpu-bay:focus-within .cpu-die {
+  box-shadow:
+    inset 0 0 14px rgba(0, 0, 0, 0.65),
+    0 0 24px rgba(88, 196, 255, 0.22),
+    0 0 16px rgba(255, 26, 58, 0.18);
+}
+
+/* Responsive — buses fold first, then socket compresses */
+@media (max-width: 880px) {
+  .cpu-bay { grid-template-columns: 1fr; padding: 10px 12px 12px; }
+  .cpu-bus { display: none; }
+  .cpu-die { width: 170px; height: 170px; }
+  .brand-name { font-size: 13px; }
+}
+@media (max-width: 520px) {
+  .cpu-die { width: 140px; height: 140px; }
+  .cpu-readout { font-size: 7px; letter-spacing: 0.16em; padding: 4px 10px; }
+  .cpu-readout .cr-sep:nth-of-type(2),
+  .cpu-readout .cr-label:nth-of-type(3),
+  .cpu-readout .cr-val:nth-of-type(3) { display: none; }
+  .brand-name { font-size: 12px; letter-spacing: 0.08em; }
+  .brand-suffix { font-size: 8px; padding: 1px 5px; }
+}
+
+/* ============================================================
+   LIVE PCB SEGMENT — the bay becomes a tactical PCB strip with
+   bus highways propagating outward from the chip mount point.
+   Backplane is absolutely positioned BEHIND the bus columns and
+   socket (which get z-index:1 to sit above it).
+   ============================================================ */
+.bay-backplane {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background-image: radial-gradient(circle,
+    rgba(216, 220, 228, 0.07) 0.8px,
+    transparent 1.2px);
+  background-size: 14px 14px;
+  background-position: 7px 7px;
+}
+.bay-backplane::before,
+.bay-backplane::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 64px;
+  pointer-events: none;
+  z-index: 1;
+}
+.bay-backplane::before { left: 0;  background: linear-gradient(90deg,  var(--void), transparent); }
+.bay-backplane::after  { right: 0; background: linear-gradient(-90deg, var(--void), transparent); }
+
+.cpu-bay > .cpu-bus,
+.cpu-bay > .cpu-socket {
+  position: relative;
+  z-index: 1;
+}
+
+/* Vertical edge rails — top-to-bottom traces defining segment boundaries */
+.edge-rail {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  width: 1px;
+  background: linear-gradient(to bottom,
+    transparent 0%,
+    var(--silver-dim) 18%,
+    var(--silver-dim) 82%,
+    transparent 100%);
+  opacity: 0.55;
+  transition: background 0.4s ease, opacity 0.4s ease;
+}
+.edge-rail-l { left: 10px; }
+.edge-rail-r { right: 10px; }
+.edge-rail::before, .edge-rail::after {
+  content: '';
+  position: absolute;
+  left: -2px;
+  width: 5px;
+  height: 1px;
+  background: var(--silver-dim);
+  opacity: 0.7;
+  transition: background 0.3s ease, opacity 0.3s ease;
+}
+.edge-rail::before { top: 14px; }
+.edge-rail::after  { bottom: 14px; }
+
+/* Horizontal bus highways — full-width data lanes */
+.bus-rail {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  height: 1px;
+  background: linear-gradient(to right,
+    transparent 0%,
+    var(--silver-dim) 6%,
+    var(--silver-dim) 94%,
+    transparent 100%);
+  overflow: visible;
+  transition: background 0.4s ease;
+}
+.bus-rail-top { top: 22px; }
+.bus-rail-bot { bottom: 22px; }
+
+/* Pulse packet traveling along each rail */
+.rail-pulse {
+  position: absolute;
+  top: -1px;
+  width: 16px;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--red) 30%,
+    var(--ember-glow) 50%,
+    var(--red) 70%,
+    transparent 100%);
+  box-shadow:
+    0 0 6px var(--red),
+    0 0 14px var(--red-soft),
+    0 0 22px var(--red-soft);
+  border-radius: 1px;
+  margin-left: -8px;
+  animation: railPulseRight 4.2s cubic-bezier(0.55, 0.05, 0.45, 0.95) infinite;
+}
+.bus-rail-bot .rail-pulse { animation-delay: 2.1s; }
+
+@keyframes railPulseRight {
+  0%   { left: 0%;   opacity: 0; }
+  6%   { opacity: 1; }
+  94%  { opacity: 1; }
+  100% { left: 100%; opacity: 0; }
+}
+@keyframes railPulseLeft {
+  0%   { left: 100%; opacity: 0; }
+  6%   { opacity: 1; }
+  94%  { opacity: 1; }
+  100% { left: 0%;   opacity: 0; }
+}
+
+body[data-mode="decode"] .rail-pulse {
+  animation-name: railPulseLeft;
+}
+
+/* Tactical reference designators at rail endpoints */
+.rail-tag {
+  position: absolute;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--silver-dim);
+  white-space: nowrap;
+  opacity: 0.7;
+  transition: color 0.3s ease, opacity 0.3s ease;
+}
+.tag-tl { top: 6px;    left: 24px;  }
+.tag-tr { top: 6px;    right: 24px; }
+.tag-bl { bottom: 6px; left: 24px;  }
+.tag-br { bottom: 6px; right: 24px; }
+
+/* ACTIVE state — whole PCB segment lights up red */
+.cpu-bay:hover .bus-rail,
+.cpu-bay:focus-within .bus-rail {
+  background: linear-gradient(to right,
+    transparent 0%,
+    var(--red) 6%,
+    var(--red) 94%,
+    transparent 100%);
+  opacity: 0.85;
+}
+.cpu-bay:hover .edge-rail,
+.cpu-bay:focus-within .edge-rail {
+  background: linear-gradient(to bottom,
+    transparent 0%,
+    var(--red) 18%,
+    var(--red) 82%,
+    transparent 100%);
+  opacity: 0.9;
+}
+.cpu-bay:hover .edge-rail::before,
+.cpu-bay:hover .edge-rail::after,
+.cpu-bay:focus-within .edge-rail::before,
+.cpu-bay:focus-within .edge-rail::after {
+  background: var(--red);
+  opacity: 1;
+}
+.cpu-bay:hover .rail-pulse,
+.cpu-bay:focus-within .rail-pulse {
+  animation-duration: 2s;
+}
+.cpu-bay:hover .rail-tag,
+.cpu-bay:focus-within .rail-tag {
+  color: var(--silver-bright);
+  opacity: 1;
+}
+
+@media (max-width: 880px) {
+  .bay-backplane { background-size: 12px 12px; }
+  .bus-rail { left: 10px; right: 10px; }
+  .bus-rail-top { top: 14px; }
+  .bus-rail-bot { bottom: 14px; }
+  .edge-rail-l { left: 4px; }
+  .edge-rail-r { right: 4px; }
+  .rail-tag { display: none; }
+}
+@media (max-width: 520px) {
+  .bus-rail { display: none; }
+}
+
 /* ====== LANG TOGGLE — sits at the far right of the ACE SELECT bar ====== */
 .ace-select { display: flex; align-items: center; gap: 14px; }
 .ace-select .ace-chips { flex: 1; }
@@ -2004,6 +2517,90 @@ footer .codename::before { content: '◢ '; color: var(--red); }
       <div class="row" id="clock">— :— :—</div>
     </div>
   </header>
+
+  <!-- ========= CORE PROCESSOR BAY =========
+       The chip image is unmodified. Everything around it — chrome socket,
+       tactical readouts, I/O buses with marching-ant pins, sticky-on-scroll
+       positioning — frames it as the tool's processor. -->
+  <section class="cpu-bay" aria-label="Core processor — MUSE/RZ-7">
+
+    <!-- Live PCB segment — backplane behind the bus columns and chip socket -->
+    <div class="bay-backplane" aria-hidden="true">
+      <span class="edge-rail edge-rail-l"></span>
+      <span class="edge-rail edge-rail-r"></span>
+      <div class="bus-rail bus-rail-top"><span class="rail-pulse"></span></div>
+      <div class="bus-rail bus-rail-bot"><span class="rail-pulse"></span></div>
+      <span class="rail-tag tag-tl">// DBG_0</span>
+      <span class="rail-tag tag-tr">// JTAG</span>
+      <span class="rail-tag tag-bl">// UART:115k</span>
+      <span class="rail-tag tag-br">// SPI_TX</span>
+    </div>
+
+    <aside class="cpu-bus bus-in" aria-hidden="true">
+      <div class="bus-cap">// I/O <span class="bus-cap-dir">IN</span></div>
+      <ul class="bus-pins">
+        <li><span class="pin-stub"></span><span class="pin-label">FILE</span></li>
+        <li><span class="pin-stub"></span><span class="pin-label">KEY</span></li>
+        <li><span class="pin-stub"></span><span class="pin-label">SALT</span></li>
+        <li><span class="pin-stub"></span><span class="pin-label">MODE</span></li>
+      </ul>
+    </aside>
+
+    <div class="cpu-socket">
+      <span class="cs-corner cs-tl"></span>
+      <span class="cs-corner cs-tr"></span>
+      <span class="cs-corner cs-bl"></span>
+      <span class="cs-corner cs-br"></span>
+
+      <div class="cpu-brand">
+        <span class="brand-prefix">//</span>
+        <span class="brand-name">MUSE / RZ-7</span>
+        <span class="brand-suffix">CORE</span>
+      </div>
+
+      <div class="cpu-readout cpu-readout-top">
+        <span class="cr-label">DIE</span>
+        <span class="cr-val">SS-RZ-2026</span>
+        <span class="cr-sep">::</span>
+        <span class="cr-label">REV</span>
+        <span class="cr-val">v0x02</span>
+        <span class="cr-sep">::</span>
+        <span class="cr-label">LITHO</span>
+        <span class="cr-val">12nm</span>
+      </div>
+
+      <div class="cpu-die">
+        <img src="icons/muse-art.png" alt="" draggable="false">
+        <span class="die-mark die-mark-tl"></span>
+        <span class="die-mark die-mark-tr"></span>
+        <span class="die-mark die-mark-bl"></span>
+        <span class="die-mark die-mark-br"></span>
+      </div>
+
+      <div class="cpu-readout cpu-readout-bottom">
+        <span class="cr-label">CLK</span>
+        <span class="cr-val">310k iter</span>
+        <span class="cr-sep">::</span>
+        <span class="cr-label">CIPHER</span>
+        <span class="cr-val">AES-256-GCM</span>
+        <span class="cr-sep">::</span>
+        <span class="cr-state">
+          <span class="state-dot"></span>
+          <span class="state-text">STANDBY</span>
+        </span>
+      </div>
+    </div>
+
+    <aside class="cpu-bus bus-out" aria-hidden="true">
+      <div class="bus-cap"><span class="bus-cap-dir">OUT</span> //</div>
+      <ul class="bus-pins">
+        <li><span class="pin-label">CIPHER</span><span class="pin-stub"></span></li>
+        <li><span class="pin-label">AUTH-TAG</span><span class="pin-stub"></span></li>
+        <li><span class="pin-label">IV</span><span class="pin-stub"></span></li>
+        <li><span class="pin-label">PACKET</span><span class="pin-stub"></span></li>
+      </ul>
+    </aside>
+  </section>
 
   <nav class="tabs">
     <button class="tab-btn active" data-tab="encode">
@@ -2122,6 +2719,7 @@ footer .codename::before { content: '◢ '; color: var(--red); }
 </div>
 
 <div class="toast-stack" id="toasts"></div>
+
 
 <script>
 /* ====== UTIL ====== */
@@ -2436,10 +3034,15 @@ function tickClock() {
 setInterval(tickClock, 1000); tickClock();
 
 /* ====== TABS ====== */
+// data-mode on <body> drives the CPU bay's flow-direction animation:
+//   encode → ants march toward the chip from the left bus (seal direction)
+//   decode → ants march toward the chip from the right bus (breach direction)
+document.body.dataset.mode = 'encode';
 $$('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
   $$('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
   const target = btn.dataset.tab;
   $$('.panel').forEach(p => p.classList.toggle('active', p.dataset.panel === target));
+  document.body.dataset.mode = target;
 }));
 
 /* ====== CIPHER GRID BUILDER ====== */
