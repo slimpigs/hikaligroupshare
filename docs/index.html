@@ -1865,6 +1865,53 @@ textarea.input-cipher:focus { border-color: var(--red); }
   text-shadow: 0 0 14px rgba(255, 26, 58, 0.55);
 }
 
+/* PREVIEW NAV — HUD stepper to slide through breached bundle files.
+   Lives in the preview bar; recolors with the active ace mode via vars. */
+.preview-nav {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
+}
+.preview-nav.hidden { display: none; }
+.preview-nav .nav-arrow {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--strut);
+  color: var(--ash);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color .18s ease, color .18s ease, box-shadow .18s ease, transform .1s ease;
+}
+.preview-nav .nav-arrow:hover {
+  border-color: var(--ember);
+  color: var(--ember-glow);
+  box-shadow: 0 0 10px var(--ember-soft), inset 0 0 7px var(--ember-soft);
+}
+.preview-nav .nav-arrow:active { transform: scale(0.85); }
+.preview-nav .nav-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--ember-glow);
+  min-width: 56px;
+  text-align: center;
+  text-shadow: 0 0 8px var(--ember-soft);
+}
+.preview-nav .nav-count .tot { color: var(--ash); text-shadow: none; }
+
+@keyframes slideFromRight { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@keyframes slideFromLeft  { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+.preview-canvas.slide-from-right { animation: slideFromRight .22s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.preview-canvas.slide-from-left  { animation: slideFromLeft  .22s cubic-bezier(0.2, 0.8, 0.2, 1); }
+
 /* TOAST */
 .toast-stack {
   position: fixed;
@@ -2801,6 +2848,11 @@ body[data-mode="decode"] .rail-pulse {
     <div class="preview-area hidden" id="decPreview">
       <div class="preview-bar">
         <span class="filename" id="prevName">payload.bin</span>
+        <div class="preview-nav hidden" id="prevNav">
+          <button class="nav-arrow" id="prevPrevBtn" type="button" aria-label="Previous file" title="Previous (←)">‹</button>
+          <span class="nav-count" id="prevCount">01 / 01</span>
+          <button class="nav-arrow" id="prevNextBtn" type="button" aria-label="Next file" title="Next (→)">›</button>
+        </div>
         <span class="meta" id="prevMeta">— · —</span>
       </div>
       <div class="preview-canvas" id="prevCanvas"></div>
@@ -4051,6 +4103,7 @@ $('#btnDecrypt').addEventListener('click', async () => {
 
 function renderPreview(filename, mime, url, size) {
   $('#decPreview').classList.remove('hidden');
+  $('#prevNav').classList.add('hidden');   // default: single-file = no stepper; bundle re-shows it
   $('#prevName').textContent = filename;
   $('#prevMeta').textContent = `${mime || 'binary'} · ${fmtBytes(size)}`;
   const canvas = $('#prevCanvas');
@@ -4371,7 +4424,7 @@ $('#btnBreachAll').addEventListener('click', async () => {
       // data-i18n on Save / Preview so language toggle re-translates them
       const saveBtn = makeEl('button', { cls: 'mini-btn', text: t('mini.save'), attrs: { 'data-i18n': 'mini.save' } });
       saveBtn.addEventListener('click', () => saveBreachedResult(r));
-      const prevBtn = makeEl('button', { cls: 'mini-btn', text: t('mini.preview'), attrs: { 'data-i18n': 'mini.preview' } });
+      const prevBtn = makeEl('button', { cls: 'mini-btn prev-trigger', text: t('mini.preview'), attrs: { 'data-i18n': 'mini.preview' } });
       prevBtn.addEventListener('click', () => previewBreachedResult(r, row, prevBtn));
       actions.appendChild(saveBtn);
       actions.appendChild(prevBtn);
@@ -4406,8 +4459,60 @@ function previewBreachedResult(r, row, btn) {
   // Bundle owns r.url — don't revoke it here when swapping previews.
   lastDecrypted = { blob: r.blob, filename: r.filename, mime: r.mime, url: r.url };
   renderPreview(r.filename, r.mime, r.url, r.byteCount);
+  syncPreviewNav(r);
+  if (pendingSlide) {
+    const c = $('#prevCanvas');
+    c.classList.remove('slide-from-right', 'slide-from-left');
+    void c.offsetWidth;                 // reflow so the animation restarts every step
+    c.classList.add(pendingSlide);
+    pendingSlide = null;
+  }
   toast(t('toast.previewLoaded', r.filename), 'ok', 'preview');
 }
+
+/* ── Slide-through navigation across breached bundle previews ──
+   Reuses previewBreachedResult so the row highlight + active-preview chip
+   stay in sync. Wraps around so ‹ / › never dead-end. */
+let previewIndex = -1;
+let pendingSlide = null;
+function okBreachResults() { return breachBundleResults.filter(r => r && r.ok); }
+function syncPreviewNav(r) {
+  const oks = okBreachResults();
+  const i = oks.indexOf(r);
+  previewIndex = i;
+  const nav = $('#prevNav');
+  if (oks.length > 1 && i >= 0) {
+    const pad = n => String(n).padStart(2, '0');
+    const el = $('#prevCount');
+    el.textContent = pad(i + 1) + ' ';
+    const tot = makeEl('span', { cls: 'tot', text: '/ ' + pad(oks.length) });
+    el.appendChild(tot);
+    nav.classList.remove('hidden');
+  } else {
+    nav.classList.add('hidden');
+  }
+}
+function navPreview(dir) {
+  const oks = okBreachResults();
+  if (oks.length < 2) return;
+  const base = previewIndex < 0 ? 0 : previewIndex;
+  const i = (base + dir + oks.length) % oks.length;
+  const r = oks[i];
+  const row = $$('#breachList .breach-row')[r.rowIdx];
+  const btn = row && row.querySelector('.prev-trigger');
+  if (!row || !btn) return;
+  pendingSlide = dir > 0 ? 'slide-from-right' : 'slide-from-left';
+  previewBreachedResult(r, row, btn);
+}
+$('#prevPrevBtn')?.addEventListener('click', () => navPreview(-1));
+$('#prevNextBtn')?.addEventListener('click', () => navPreview(1));
+document.addEventListener('keydown', (e) => {
+  if ($('#decPreview').classList.contains('hidden') || $('#prevNav').classList.contains('hidden')) return;
+  const tag = (document.activeElement?.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea') return;
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); navPreview(-1); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); navPreview(1); }
+});
 
 $('#btnSaveAllBreached').addEventListener('click', () => {
   const ok = breachBundleResults.filter(r => r.ok);
