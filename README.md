@@ -37,6 +37,28 @@ Each mode has its own **distinct encryption pepper**. This means **the ace mode 
 
 So when you share a sealed file, tell the recipient *which mode you sealed it in*, the same way you tell them the 6 cipher words. (Sender and recipient should both click the same chip in the ACE SELECT rail before sealing / breaching.)
 
+## MIL-SPEC mode (NEW)
+
+Next to the language toggle there's a **MIL-SPEC** switch. It's a seventh, hardened mode — not an anime ace. Engage it and the console transforms into a classified amber SIGINT terminal: the ace rail and the MUSE/RZ-7 core bay are stripped away, a **CLASSIFIED // MIL-SPEC** banner drops in, and everything recolors to phosphor amber.
+
+What it actually changes under the hood:
+
+- **PBKDF2 is hardened from 310,000 → 1,000,000 iterations** — far slower to brute-force a weak passphrase.
+- **Its own pepper**, exactly like the ace modes — a MIL-SPEC packet can ONLY be breached in MIL-SPEC mode.
+- The iteration count is **written into the packet (v3 format)**, so the recipient just selects MIL-SPEC and breaches — no extra coordination needed beyond the mode + the 6 words.
+
+Still **6 words**. Pair it with **⚄ Generate** (below) for a ≈ 78-bit random key and it's genuinely strong.
+
+> Backward-compatible: everything sealed before this update (v2, 310K) still breaches normally. Nothing you've already shared breaks.
+
+## Random key generation + key card (NEW)
+
+Under the cipher grid on the **SEAL** side:
+
+- **⚄ Generate** — rolls a cryptographically-random **6-word key** from the EFF large diceware list (7,776 words → **≈ 78 bits** of entropy), using `crypto.getRandomValues` with rejection sampling (no modulo bias). The entropy estimate shows next to the button.
+- **⎘ Copy** — copies the 6 words to the clipboard.
+- **⭳ Key Card** — downloads a small `skystriker-keycard-<timestamp>.txt` containing the 6 words, the mode (ace or MIL-SPEC), and the KDF strength — everything the recipient needs. **Keep it offline; don't store it next to the sealed file.**
+
 ## How to use
 
 ### Sealing files (sender)
@@ -83,12 +105,13 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 ## Technical details
 
 - **Cipher:** AES-256-GCM (authenticated encryption — tampering is detected)
-- **Key derivation:** PBKDF2 / SHA-256 / 310,000 iterations
+- **Key derivation:** PBKDF2 / SHA-256 — **310,000** iterations (standard ace modes) or **1,000,000** (MIL-SPEC)
+- **Random key generation:** EFF large diceware wordlist (7,776 words), picked with `crypto.getRandomValues` + rejection sampling → ≈ 12.9 bits/word, ≈ 78 bits for six words
 - **Salt / IV:** randomly generated per encryption (16 / 12 bytes)
-- **Per-mode pepper:** each ace mode has its own secret pepper baked into the page and appended to the password before PBKDF2. Six modes → six separate encryption namespaces. The mode therefore acts as a second factor.
+- **Per-mode pepper:** each mode (six aces + MIL-SPEC) has its own secret pepper baked into the page and appended to the password before PBKDF2. The mode therefore acts as a second factor.
 - **Parallel sealing:** multi-file batches derive the AES key once and encrypt all files in parallel with unique IVs, giving near-linear speedup.
 - **Parallel breaching:** when a JSON bundle is loaded, the receiver groups ciphers by salt (one PBKDF2 per unique salt — usually just one for a same-batch bundle), then runs all AES-GCM decrypts in parallel.
-- **Packet format:** `MAGIC(4) | VERSION(1) | SALT(16) | IV(12) | CIPHERTEXT`, base64-encoded. Version = 0x02.
+- **Packet format:** base64-encoded. **v3** (current): `MAGIC(4) | 0x03 | ITERATIONS(4, big-endian) | SALT(16) | IV(12) | CIPHERTEXT` — the KDF iteration count travels in the packet so any strength breaches without extra coordination. **v2** (`MAGIC | 0x02 | SALT | IV | CIPHERTEXT`, fixed 310K) is still fully readable, so older sealed files keep working.
 - **Bundle format:** `[{"filename": "...", "cipher": "..."}, ...]` — a plain JSON array of single-cipher entries. Saved as `skystriker-bundle-<ISO-timestamp>-<N>files.json`.
 - **Zero network during crypto.** No server calls during encrypt or decrypt. Your words never leave your browser.
 
@@ -141,6 +164,28 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 
 所以分享密文时，要告诉接收方三样东西：6 个密码词、**加密时使用的 ace 模式**、密文的获取地址。（双方都要在 ACE SELECT 栏点中同一个模式再开始封印/破封。）
 
+## 军规模式 MIL-SPEC（新增）
+
+语言切换按钮旁边有一个 **MIL-SPEC** 开关。它是第七种、强化的模式 —— 不是动漫 ace。开启后界面会变成一台机密琥珀色 SIGINT 终端：ace 栏和 MUSE/RZ-7 核心被隐藏，顶部落下 **CLASSIFIED // MIL-SPEC** 横幅，整体重新着色为磷光琥珀。
+
+底层实际变化：
+
+- **PBKDF2 从 310,000 轮提升到 1,000,000 轮** —— 弱口令被暴力破解会慢得多。
+- **拥有独立 pepper**，和各 ace 模式一样 —— 军规模式封的包只能在军规模式下破封。
+- 迭代次数**写入数据包（v3 格式）**，接收方只需选中 MIL-SPEC 即可破封，除模式 + 6 词外无需额外协调。
+
+仍然是 **6 个词**。配合下方的 **⚄ 随机生成**（约 78 位熵）即可达到真正的高强度。
+
+> 向后兼容：本次更新之前封印的所有文件（v2、310K）仍可正常破封，已分享的内容不会失效。
+
+## 随机密钥生成 + 密钥卡（新增）
+
+在 **SEAL（封印）** 侧密码格下方：
+
+- **⚄ 随机生成** —— 用 `crypto.getRandomValues`（拒绝采样、无取模偏差）从 EFF 大词表（7,776 词 → **约 78 位**熵）生成 **6 词密钥**，按钮旁显示熵估计。
+- **⎘ 复制** —— 复制 6 个词到剪贴板。
+- **⭳ 密钥卡** —— 下载 `skystriker-keycard-<时间戳>.txt`，内含 6 个词、模式（ace 或 MIL-SPEC）与 KDF 强度，破封所需信息齐全。**请离线保管，不要和密文放在一起。**
+
 ## 使用方法
 
 ### 封印（发送方）
@@ -187,12 +232,13 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 ## 技术细节
 
 - **加密算法**：AES-256-GCM（带完整性校验，篡改会被发现）
-- **密钥推导**：PBKDF2 / SHA-256 / 31 万次迭代
+- **密钥推导**：PBKDF2 / SHA-256 —— **31 万**次迭代（标准 ace 模式）或 **100 万**次（MIL-SPEC）
+- **随机密钥生成**：EFF 大词表（7,776 词），`crypto.getRandomValues` + 拒绝采样 → 每词约 12.9 位、6 词约 78 位熵
 - **Salt 与 IV**：每次加密随机生成（16 / 12 字节）
-- **模式专属 pepper**：每个 ace 模式有自己的 pepper（密码混入串），加入到密码词中后再进行 PBKDF2。六个模式 = 六个互不兼容的加密命名空间，模式本身成为第二认证因素。
+- **模式专属 pepper**：每个模式（六个 ace + MIL-SPEC）有自己的 pepper（密码混入串），加入到密码词中后再进行 PBKDF2，模式本身成为第二认证因素。
 - **并行封印**：批量上传时只推导一次 AES 密钥，所有文件用各自独立的 IV 并行加密，近似线性加速。
 - **并行破封**：加载 JSON 密文包时，接收端按 salt 分组（一组只跑一次 PBKDF2 —— 同批次封印的密文包通常只有一组），然后所有 AES-GCM 解密并行执行。
-- **数据包格式**：`MAGIC(4) | VERSION(1) | SALT(16) | IV(12) | 密文`，整体 base64 编码。Version = 0x02。
+- **数据包格式**：base64 编码。**v3**（当前）：`MAGIC(4) | 0x03 | 迭代次数(4，大端) | SALT(16) | IV(12) | 密文` —— 迭代次数随包传递，任意强度都能直接破封。**v2**（`MAGIC | 0x02 | SALT | IV | 密文`，固定 31 万）仍可完整读取，旧密文继续可用。
 - **密文包格式**：`[{"filename": "...", "cipher": "..."}, ...]` —— 单个密文条目的 JSON 数组。保存文件名为 `skystriker-bundle-<ISO 时间戳>-<N>files.json`。
 - **加解密过程零网络**。没有任何服务器请求，密码词不会离开你的浏览器。
 
