@@ -3454,7 +3454,10 @@ function saveCard() {
   if (words.length !== 6) return toast(t('toast.wordsNeed6'), 'err', 'abort');
   const mode = currentMode();
   const isMil = mode === 'mil';
-  const modeLabel = isMil ? 'MIL-SPEC' : String(ACE_MODES[mode]?.pilot || mode);
+  // Use the exact mode KEY (raye/kagari/shizuku/hayate/roze/zeke) — each has its
+  // own pepper, so the recipient must select this precise chip. The pilot name
+  // (RAYE/ROZE) is shared across modes and would be ambiguous.
+  const modeLabel = isMil ? 'MIL-SPEC' : mode.toUpperCase();
   const iters = itersForMode(mode);
   const lines = [
     'SKY STRIKER // SEALED KEY CARD',
