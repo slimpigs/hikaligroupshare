@@ -254,6 +254,170 @@
   box-shadow: 0 0 22px rgba(255,176,0,0.10), inset 0 0 30px rgba(255,176,0,0.04);
 }
 
+/* ============================================================
+   MIL-SPEC FULL CONSOLE TRANSFORMATION
+   Strips the anime identity entirely — display fonts, emblem,
+   embers, angular hull panels — and rebuilds the shell as a
+   classified SCIF key-ceremony terminal: stark monospace,
+   blueprint grid, dossier panels, stamped readouts.
+   ============================================================ */
+
+/* 1. TYPOGRAPHY — kill every display font; force technical monospace. */
+[data-theme="mil"],
+[data-theme="mil"] body,
+[data-theme="mil"] .brand h1,
+[data-theme="mil"] .brand h1 .sep,
+[data-theme="mil"] .brand h1 .ace-name,
+[data-theme="mil"] .tab-btn,
+[data-theme="mil"] .btn,
+[data-theme="mil"] .fetch-btn,
+[data-theme="mil"] .input-cipher,
+[data-theme="mil"] .url-row input {
+  font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace !important;
+  letter-spacing: 0.04em;
+}
+
+/* 2. ATMOSPHERE — no anime embers/sweep; engineering blueprint grid + vignette. */
+[data-theme="mil"] .embers,
+[data-theme="mil"] .sweep { display: none; }
+[data-theme="mil"] body::before {
+  background:
+    radial-gradient(ellipse at 50% -5%, rgba(255,176,0,0.12), transparent 55%),
+    radial-gradient(ellipse at 50% 110%, rgba(255,176,0,0.05), transparent 60%),
+    linear-gradient(180deg, #05060a, #020203 70%, #000);
+}
+[data-theme="mil"] body::after {
+  background-image:
+    linear-gradient(90deg, rgba(255,176,0,0.05) 1px, transparent 1px),
+    linear-gradient(0deg,  rgba(255,176,0,0.04) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(ellipse at 50% 38%, black 35%, transparent 85%);
+}
+
+/* 3. HEADER — anime emblem out; classified document header in. */
+/* Hide the anime ace rail in MIL (higher specificity than the base .ace-select
+   .ace-chips rule that was overriding the original [data-theme=mil] hide). */
+[data-theme="mil"] .ace-select .ace-chips,
+[data-theme="mil"] .ace-select .ace-divider { display: none !important; }
+[data-theme="mil"] .ace-label { color: var(--red-deep); }
+[data-theme="mil"] .brand .glyph { display: none; }
+[data-theme="mil"] .brand { gap: 14px; align-items: center; }
+/* Barcode + chevron classification seal in place of the mech glyph. */
+[data-theme="mil"] .brand::before {
+  content: ''; flex: 0 0 auto; width: 46px; height: 46px;
+  background:
+    repeating-linear-gradient(90deg, var(--red) 0 2px, transparent 2px 3px, var(--red) 3px 4px, transparent 4px 7px);
+  border: 1px solid var(--red-deep);
+  box-shadow: inset 0 0 0 3px var(--void), 0 0 14px rgba(255,176,0,0.25);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+}
+[data-theme="mil"] .brand h1 {
+  font-size: 21px !important; font-weight: 700 !important;
+  letter-spacing: 0.18em !important; text-transform: uppercase;
+  color: var(--ember-glow) !important; text-shadow: 0 0 12px var(--shadow-r);
+  animation: none !important;
+}
+[data-theme="mil"] .brand h1::before { content: none !important; }   /* drop anime decoration */
+[data-theme="mil"] .brand h1 .sep { color: var(--red-deep) !important; -webkit-text-fill-color: var(--red-deep) !important; }
+[data-theme="mil"] .brand h1 .ace-name {
+  color: var(--void) !important; -webkit-text-fill-color: var(--void) !important;
+  background: linear-gradient(180deg, var(--ember-glow), var(--red));
+  padding: 1px 8px; letter-spacing: 0.2em; box-shadow: 0 0 12px rgba(255,176,0,0.5);
+}
+[data-theme="mil"] .brand .subtitle {
+  text-transform: uppercase; letter-spacing: 0.16em; color: var(--ash);
+  font-size: 9px;
+}
+[data-theme="mil"] .brand .subtitle::before { content: 'DOC // '; color: var(--red-deep); }
+
+/* Status block becomes a stamped authorization readout. */
+[data-theme="mil"] .status-block {
+  border: 1px solid var(--red-deep); padding: 9px 13px;
+  background: linear-gradient(180deg, rgba(255,176,0,0.04), rgba(0,0,0,0.3));
+  clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 9px 100%, 0 calc(100% - 9px));
+}
+[data-theme="mil"] .status-block .row { text-transform: uppercase; letter-spacing: 0.14em; }
+[data-theme="mil"] .status-block .led { background: var(--red); box-shadow: 0 0 8px var(--shadow-r); }
+
+/* 4. TABS — terminal mode selector: hard keys, lit-amber active state. */
+[data-theme="mil"] .tabs { gap: 0; border: 1px solid var(--red-deep); }
+[data-theme="mil"] .tab-btn {
+  text-transform: uppercase; letter-spacing: 0.22em; font-weight: 700; font-size: 12px;
+  border: none; border-right: 1px solid var(--red-deep);
+  background: rgba(0,0,0,0.35); color: var(--ash);
+}
+[data-theme="mil"] .tab-btn:last-child { border-right: none; }
+[data-theme="mil"] .tab-btn .idx { color: var(--red-deep); letter-spacing: 0.2em; }
+[data-theme="mil"] .tab-btn:hover { background: var(--red-soft); color: var(--ember); }
+[data-theme="mil"] .tab-btn.active {
+  background: linear-gradient(180deg, var(--ember), var(--red));
+  color: var(--void); box-shadow: inset 0 0 0 1px var(--ember-glow), 0 0 18px rgba(255,176,0,0.35);
+}
+[data-theme="mil"] .tab-btn.active .idx { color: rgba(10,10,6,0.7); }
+
+/* 5. PANELS — dossier: hard rectangular border, blueprint fill, top caution strip. */
+[data-theme="mil"] .panel {
+  border: 1px solid var(--red-deep);
+  background:
+    linear-gradient(180deg, rgba(255,176,0,0.025), rgba(0,0,0,0.25)),
+    repeating-linear-gradient(0deg, transparent 0 25px, rgba(255,176,0,0.015) 25px 26px),
+    repeating-linear-gradient(90deg, transparent 0 25px, rgba(255,176,0,0.015) 25px 26px),
+    var(--void);
+  border-top: 3px solid var(--red);
+  clip-path: none;
+}
+/* Recolor the four registration corner marks to amber. */
+[data-theme="mil"] .panel::before,
+[data-theme="mil"] .panel::after,
+[data-theme="mil"] .panel > .corner-tr,
+[data-theme="mil"] .panel > .corner-br { border-color: var(--red) !important; }
+/* Caution-stripe ribbon down the active panel's left edge. */
+[data-theme="mil"] .panel.active { position: relative; }
+
+/* 6. SECTION LABELS — field tags with a lit marker. */
+[data-theme="mil"] .section-label {
+  text-transform: uppercase; color: var(--ember); letter-spacing: 0.2em;
+}
+[data-theme="mil"] .section-label::before {
+  background: var(--red) !important; box-shadow: 0 0 8px var(--shadow-r);
+}
+
+/* 7. BUTTONS — hardened command keys with a console prompt prefix. */
+[data-theme="mil"] .btn {
+  text-transform: uppercase; letter-spacing: 0.16em; font-weight: 700;
+  border: 1px solid var(--red); color: var(--ember-glow);
+  background: linear-gradient(180deg, rgba(255,176,0,0.10), rgba(0,0,0,0.4));
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+}
+[data-theme="mil"] .btn:not(.ghost)::before { content: '> '; color: var(--red); font-weight: 700; }
+[data-theme="mil"] .btn:hover {
+  background: linear-gradient(180deg, rgba(255,176,0,0.22), rgba(0,0,0,0.4));
+  box-shadow: 0 0 16px rgba(255,176,0,0.3);
+}
+[data-theme="mil"] .btn.strike {
+  border-color: #c23b2e; color: #ffd2cc;
+  background: linear-gradient(180deg, rgba(194,59,46,0.18), rgba(0,0,0,0.4));
+}
+[data-theme="mil"] .btn.strike::before { content: '⚠ '; color: #ff6a55; }
+
+/* Dropzones + inputs pick up the hardened steel treatment too. */
+[data-theme="mil"] .dropzone {
+  border: 1px dashed var(--red-deep); background: rgba(255,176,0,0.02);
+}
+[data-theme="mil"] .dropzone:hover { border-color: var(--red); background: rgba(255,176,0,0.05); }
+[data-theme="mil"] .input-cipher,
+[data-theme="mil"] .url-row input {
+  border: 1px solid var(--red-deep); background: #0a0c07; color: var(--ember);
+}
+
+/* 8. A faint document-control block stamped into the frame's top-right. */
+[data-theme="mil"] .frame::after {
+  content: 'TS//SCI · NOFORN · COPY 1 OF 1';
+  position: absolute; top: 10px; right: 24px;
+  font: 700 8px/1 'JetBrains Mono', monospace; letter-spacing: 0.24em;
+  color: var(--red-deep); pointer-events: none; opacity: 0.8;
+}
+
 /* KEY FORGE — random word generation + save controls (seal side) */
 .keyforge { display: flex; align-items: center; gap: 8px; margin: 14px 0 2px; flex-wrap: wrap; }
 .forge-btn {
