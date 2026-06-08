@@ -5411,6 +5411,12 @@ function armBundle(entries) {
     b64: e.cipher.replace(/\s+/g, ''),
   }));
 
+  // Auto-verify (same as single Breach): surface the embedded checkword from the
+  // first v4/MIL entry so the checkword row verifies live as the recipient types.
+  loadedCheckword = null;
+  for (const e of breachBundle) { const c = headerCheckword(e.b64); if (c) { loadedCheckword = c; break; } }
+  updateCipherCheck($('#decCipher'), $('#decCheck'));
+
   $('#breachBundle').classList.remove('hidden');
   $('#bundleSummary').textContent = t('bundle.summary', breachBundle.length, fmtBytes(approxBytes));
   updateBundleCounter(0, breachBundle.length);
@@ -5437,6 +5443,8 @@ function disarmBundle({ keepTextarea = false, silent = false } = {}) {
   breachBundleResults = [];
   breachBundle = null;
   activeBundleRow = null;
+  loadedCheckword = null;
+  updateCipherCheck($('#decCipher'), $('#decCheck'));
 
   $('#breachBundle').classList.add('hidden');
   $('#breachBundleFooter').classList.add('hidden');
@@ -5471,6 +5479,12 @@ function ingestCipherText(text) {
 $('#btnBreachAll').addEventListener('click', async () => {
   if (!breachBundle || !breachBundle.length) return toast(t('toast.bundleEmpty'), 'err', 'abort');
   const words = readCipherWords($('#decCipher'));
+  // Auto-verify, consistent with single Breach: if the bundle embeds a checkword
+  // (v4/MIL), reject a mismatched key up front instead of failing every row.
+  if (loadedCheckword) {
+    const typed = cipherCheckWord(words);
+    if (typed && typed !== loadedCheckword) return toast(t('toast.checkMismatch', loadedCheckword), 'err', 'abort');
+  }
   const btn = $('#btnBreachAll');
   const progress = $('#decProgress');
   btn.disabled = true;
