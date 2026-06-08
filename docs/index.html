@@ -315,7 +315,16 @@
   font-size: 21px !important; font-weight: 700 !important;
   letter-spacing: 0.18em !important; text-transform: uppercase;
   color: var(--ember-glow) !important; text-shadow: 0 0 12px var(--shadow-r);
-  animation: none !important;
+  animation: milTitleGlitch 4.2s infinite !important;
+}
+/* RGB-split / jitter glitch — fires in brief bursts, not constantly. */
+@keyframes milTitleGlitch {
+  0%, 88%, 100% { transform: none; text-shadow: 0 0 12px var(--shadow-r); }
+  89% { transform: translate(1px, -1px); text-shadow: -2px 0 #ff2d6b, 2px 0 #15e0ff, 0 0 12px var(--shadow-r); }
+  91% { transform: translate(-2px, 1px) skewX(-5deg); text-shadow: 2px 0 #ff2d6b, -2px 0 #15e0ff; clip-path: inset(0 0 55% 0); }
+  93% { transform: translate(2px, 0); text-shadow: -2px 0 #ff2d6b, 2px 0 #15e0ff; clip-path: inset(55% 0 0 0); }
+  95% { transform: translate(-1px, 0); text-shadow: 1px 0 #ff2d6b, -1px 0 #15e0ff; clip-path: none; }
+  96% { transform: none; }
 }
 [data-theme="mil"] .brand h1::before { content: none !important; }   /* drop anime decoration */
 [data-theme="mil"] .brand h1 .sep { color: var(--red-deep) !important; -webkit-text-fill-color: var(--red-deep) !important; }
@@ -3726,6 +3735,30 @@ $('#milToggle')?.addEventListener('click', () => {
    Activated only while in MIL-SPEC. milFxApply(on, justEntered) is called
    from setAceMode: it starts/stops the rain and (re)runs the boot overlay
    when you newly engage the mode. */
+/* Text scramble-reveal: cycles random glyphs that resolve left-to-right into
+   finalText. Works on inputs (el.value) and elements (el.textContent). Used on
+   ⚄ Generate (each cipher segment scrambles to its word) and on MIL engage. */
+function scrambleTo(el, finalText, opts) {
+  opts = opts || {};
+  const chars = opts.chars || '!<>-_\\/[]{}=+*^?#0123456789ABCDEFｱｲｳｴｵｶ';
+  const dur = opts.dur || 360, delay = opts.delay || 0;
+  const isInput = 'value' in el;
+  const set = (s) => { if (isInput) el.value = s; else el.textContent = s; };
+  function run() {
+    const start = performance.now();
+    (function frame(now) {
+      const p = Math.min(1, (now - start) / dur);
+      const reveal = Math.floor(p * finalText.length);
+      let out = finalText.slice(0, reveal);
+      for (let i = reveal; i < finalText.length; i++) out += chars[(Math.random() * chars.length) | 0];
+      set(out);
+      if (p < 1) requestAnimationFrame(frame);
+      else { set(finalText); if (isInput) el.dispatchEvent(new Event('input', { bubbles: true })); }
+    })(performance.now());
+  }
+  if (delay) setTimeout(run, delay); else run();
+}
+
 let milRainCanvas = null, milRainRAF = null;
 function milRainStart() {
   if (milRainCanvas) return;
@@ -3787,18 +3820,28 @@ function milBootRun() {
   document.body.appendChild(box);
   const dismiss = () => { clearTimeout(milBootTimer); box.classList.add('done'); setTimeout(() => box.remove(), 500); };
   box.addEventListener('click', dismiss);
-  let li = 0, ci = 0;
+  // Fast line cascade — every line shows within ~0.3s (was a slow char-typer).
+  let li = 0;
   (function tick() {
-    const done = lines.slice(0, li).join('\n');
-    if (li >= lines.length) { milBootTimer = setTimeout(dismiss, 450); return; }
-    pre.textContent = done + (li ? '\n' : '') + lines[li].slice(0, ci);
-    if (ci < lines[li].length) { ci++; milBootTimer = setTimeout(tick, 11); }
-    else { li++; ci = 0; milBootTimer = setTimeout(tick, 90); }
+    if (li >= lines.length) { milBootTimer = setTimeout(dismiss, 380); return; }
+    li++;
+    pre.textContent = lines.slice(0, li).join('\n');
+    milBootTimer = setTimeout(tick, 55);
   })();
 }
 function milFxApply(on, justEntered) {
-  if (on) { milRainStart(); if (justEntered) milBootRun(); }
-  else { milRainStop(); document.getElementById('milBoot')?.remove(); }
+  if (on) {
+    milRainStart();
+    if (justEntered) {
+      milBootRun();
+      // Scramble the title chip in as the boot overlay clears.
+      const an = document.getElementById('aceName');
+      if (an) scrambleTo(an, 'MIL-SPEC', { dur: 650, delay: 820 });
+    }
+  } else {
+    milRainStop();
+    document.getElementById('milBoot')?.remove();
+  }
 }
 
 (function bootAceMode() {
@@ -4000,7 +4043,8 @@ function showEntropy() {
 function generateWords() {
   const inputs = [...$('#encCipher').querySelectorAll('input')];
   const n = inputs.length;
-  inputs.forEach(inp => { inp.value = secureRandWord(); });
+  // Scramble each segment into its new word, staggered for a cascade.
+  inputs.forEach((inp, i) => scrambleTo(inp, secureRandWord(), { dur: 300, delay: i * 40 }));
   showEntropy();
   updateKeyStrength();
   toast(t('toast.wordsGen', Math.round(WORD_BITS * n), n), 'ok', 'loadout');
