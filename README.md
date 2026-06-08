@@ -51,6 +51,7 @@ What it actually changes under the hood:
 - **PBKDF2 is hardened from 310,000 → 1,000,000 iterations** — far slower to brute-force a weak passphrase.
 - **Its own pepper**, exactly like the ace modes — a MIL-SPEC packet can ONLY be breached in MIL-SPEC mode.
 - The iteration count is **written into the packet (v3 format)**, so the recipient just selects MIL-SPEC and breaches — no extra coordination needed beyond the mode + the **12 words**.
+- **Checkword typo-guard:** a single word derived from your *full* entered key shows live below the matrix. The sender shares it (it's also on the key card); the recipient compares their checkword before breaching — a typo flips it ~7775/7776 of the time, so mistakes are caught instantly instead of as a cryptic "breach failed." It's a local UX aid only: **not stored in the packet and not mixed into the key**, so it leaks nothing.
 
 The word count *is* the mode: selecting MIL-SPEC renders 12 segments on both the seal and breach sides, so the recipient simply switches to MIL-SPEC and the grid asks for the right number of words. Pair it with **⚄ Generate** for a full ≈ 155-bit random key and it's genuinely strong.
 
@@ -184,6 +185,7 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 - **PBKDF2 从 310,000 轮提升到 1,000,000 轮** —— 弱口令被暴力破解会慢得多。
 - **拥有独立 pepper**，和各 ace 模式一样 —— 军规模式封的包只能在军规模式下破封。
 - 迭代次数**写入数据包（v3 格式）**，接收方只需选中 MIL-SPEC 即可破封，除模式 + **12 词**外无需额外协调。
+- **校验词防错：** 矩阵下方实时显示一个由你*完整*密钥推导出的单词。发送方把它告诉对方（密钥卡上也有），接收方破封前核对自己的校验词 —— 任意打错一个词都会以约 7775/7776 的概率改变它，于是输入错误能被立即发现，而不是只得到一句模糊的"破封失败"。它仅是本地辅助：**不写入数据包、也不混入密钥**，因此不泄露任何信息。
 
 词数即模式：选中 MIL-SPEC 后，封印侧和破封侧都会渲染 12 段，接收方只要切到 MIL-SPEC，密码格自然就会要求正确的词数。配合 **⚄ 随机生成** 得到完整的约 155 位随机密钥，强度十分扎实。
 
