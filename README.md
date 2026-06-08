@@ -39,25 +39,30 @@ So when you share a sealed file, tell the recipient *which mode you sealed it in
 
 ## MIL-SPEC mode (NEW)
 
-Next to the language toggle there's a **MIL-SPEC** switch. It's a seventh, hardened mode — not an anime ace. Engage it and the console transforms into a classified amber SIGINT terminal: the ace rail and the MUSE/RZ-7 core bay are stripped away, a **CLASSIFIED // MIL-SPEC** banner drops in, and everything recolors to phosphor amber.
+Next to the language toggle there's a **MIL-SPEC** switch. It's a seventh, hardened mode — not an anime ace, and it deliberately looks nothing like them. Engage it and the console transforms into a **classified cryptographic authorization terminal**: the ace rail and the MUSE/RZ-7 core bay are stripped away, a **CLASSIFIED // MIL-SPEC** banner drops in, and everything recolors to phosphor amber.
+
+The cipher lock is rebuilt as a **12-segment KEY MATRIX** — a 4×3 keypad with hex segment addresses (`0x00`–`0x0B`) and a per-segment **ARMED** indicator that ignites as you enter each word. Below it, a live **KEY STRENGTH** meter fills and escalates its clearance grade as the matrix fills:
+
+`INSUFFICIENT → GUARDED → HARDENED → BLACKSITE`
 
 What it actually changes under the hood:
 
+- **12-word cipher instead of 6.** A full MIL-SPEC key carries **≈ 155 bits** of entropy (vs. ≈ 78 for a 6-word ace key) — the EFF large diceware list at ~12.9 bits/word, twelve segments deep.
 - **PBKDF2 is hardened from 310,000 → 1,000,000 iterations** — far slower to brute-force a weak passphrase.
 - **Its own pepper**, exactly like the ace modes — a MIL-SPEC packet can ONLY be breached in MIL-SPEC mode.
-- The iteration count is **written into the packet (v3 format)**, so the recipient just selects MIL-SPEC and breaches — no extra coordination needed beyond the mode + the 6 words.
+- The iteration count is **written into the packet (v3 format)**, so the recipient just selects MIL-SPEC and breaches — no extra coordination needed beyond the mode + the **12 words**.
 
-Still **6 words**. Pair it with **⚄ Generate** (below) for a ≈ 78-bit random key and it's genuinely strong.
+The word count *is* the mode: selecting MIL-SPEC renders 12 segments on both the seal and breach sides, so the recipient simply switches to MIL-SPEC and the grid asks for the right number of words. Pair it with **⚄ Generate** for a full ≈ 155-bit random key and it's genuinely strong.
 
-> Backward-compatible: everything sealed before this update (v2, 310K) still breaches normally. Nothing you've already shared breaks.
+> **Backward compatibility:** the six anime ace modes are unchanged — everything sealed before this update (v2 310K, or ace v3) still breaches normally. The one exception is anything sealed under the *original* 6-word MIL-SPEC: MIL-SPEC now expects 12 words, so re-seal those few packets if any exist.
 
 ## Random key generation + key card (NEW)
 
 Under the cipher grid on the **SEAL** side:
 
-- **⚄ Generate** — rolls a cryptographically-random **6-word key** from the EFF large diceware list (7,776 words → **≈ 78 bits** of entropy), using `crypto.getRandomValues` with rejection sampling (no modulo bias). The entropy estimate shows next to the button.
-- **⎘ Copy** — copies the 6 words to the clipboard.
-- **⭳ Key Card** — downloads a small `skystriker-keycard-<timestamp>.txt` containing the 6 words, the mode (ace or MIL-SPEC), and the KDF strength — everything the recipient needs. **Keep it offline; don't store it next to the sealed file.**
+- **⚄ Generate** — rolls a cryptographically-random key from the EFF large diceware list (7,776 words → **≈ 12.9 bits/word**), using `crypto.getRandomValues` with rejection sampling (no modulo bias). It fills however many segments the active mode uses — **6 words (≈ 78 bits)** in an ace mode, **12 words (≈ 155 bits)** in MIL-SPEC. The entropy estimate shows next to the button.
+- **⎘ Copy** — copies the active key (6 or 12 words) to the clipboard.
+- **⭳ Key Card** — downloads a small `skystriker-keycard-<timestamp>.txt` containing the words, the word count, the mode (ace or MIL-SPEC), the entropy estimate, and the KDF strength — everything the recipient needs. **Keep it offline; don't store it next to the sealed file.**
 
 ## How to use
 
@@ -67,7 +72,7 @@ Under the cipher grid on the **SEAL** side:
 2. **Pick your ace mode** in the ACE SELECT rail at the top. Remember it — you'll tell the recipient.
 3. Stay on the **SEAL** tab (Loadout 01).
 4. Drop one or more files onto the panel, or click to pick. Multiple files seal in parallel. File size is bounded only by your browser's memory budget (hundreds of MB per file work on desktop).
-5. Fill in your **6 cipher words** in the lock grid. This is the passphrase — share it with the recipient through a **different channel** from the ciphertext.
+5. Fill in your cipher words in the lock grid — **6 words** in an ace mode, or **12 segments** in MIL-SPEC. This is the passphrase — share it with the recipient through a **different channel** from the ciphertext.
 6. Click **Engage Seal**. The MUSE/RZ-7 chip above the tabs pulses red while AES-GCM is running; after a moment the sealed transmissions appear, one row per file.
 7. Per-row buttons:
    - **Copy** — copy this cipher to clipboard
@@ -80,7 +85,7 @@ Under the cipher grid on the **SEAL** side:
    - **Save All as JSON** — downloads that bundle as one `.json` file (use this when the bundle is too big for the clipboard)
 
    Then host the file(s) wherever and send the link(s).
-8. **Tell the recipient three things:** the 6 cipher words, the ace mode you sealed in, and where to fetch the ciphertext (a single `.ssae.txt`, a folder of them, or the bundle `.json`).
+8. **Tell the recipient three things:** the cipher words (6, or **12 in MIL-SPEC**), the mode you sealed in, and where to fetch the ciphertext (a single `.ssae.txt`, a folder of them, or the bundle `.json`).
 
 ### Breaching files (recipient)
 
@@ -90,7 +95,7 @@ Under the cipher grid on the **SEAL** side:
 4. Get the ciphertext into the page — pick whichever fits:
    - **Single cipher**: paste a `.ssae.txt` URL into the URL field and click **Fetch**, paste the ciphertext directly into the input box, or drop the downloaded `.ssae.txt` onto the panel.
    - **Bundle (multi-cipher)**: paste the JSON bundle from "Copy All as JSON", or drop a `.json` bundle file onto the panel. The page detects the bundle and switches into multi-cipher mode automatically — you'll see every cipher listed as a row.
-5. Type the same **6 cipher words** the sender gave you. Order matters.
+5. Type the same cipher words the sender gave you — the grid shows **6 slots** in an ace mode and **12 segments** in MIL-SPEC. Order matters.
 6. Click **Breach Transmission** (single) or **Breach All** (bundle).
    - **Single**: recovered file previews in the panel; click **Download Recovered File** to save.
    - **Bundle**: each row decrypts in parallel and gets **Save** + **Preview** buttons. Footer has **Save All Recovered** and **Copy All Filenames**.
@@ -106,7 +111,8 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 
 - **Cipher:** AES-256-GCM (authenticated encryption — tampering is detected)
 - **Key derivation:** PBKDF2 / SHA-256 — **310,000** iterations (standard ace modes) or **1,000,000** (MIL-SPEC)
-- **Random key generation:** EFF large diceware wordlist (7,776 words), picked with `crypto.getRandomValues` + rejection sampling → ≈ 12.9 bits/word, ≈ 78 bits for six words
+- **Random key generation:** EFF large diceware wordlist (7,776 words), picked with `crypto.getRandomValues` + rejection sampling → ≈ 12.9 bits/word — **≈ 78 bits for a 6-word ace key, ≈ 155 bits for a 12-word MIL-SPEC key**
+- **Word count is mode-bound:** ace modes use a 6-slot grid; MIL-SPEC renders a 12-segment key matrix on both seal and breach sides, with a live entropy/clearance meter (INSUFFICIENT → GUARDED → HARDENED → BLACKSITE)
 - **Salt / IV:** randomly generated per encryption (16 / 12 bytes)
 - **Per-mode pepper:** each mode (six aces + MIL-SPEC) has its own secret pepper baked into the page and appended to the password before PBKDF2. The mode therefore acts as a second factor.
 - **Parallel sealing:** multi-file batches derive the AES key once and encrypt all files in parallel with unique IVs, giving near-linear speedup.
@@ -117,8 +123,8 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 
 ## Please read before using
 
-- **There is no password recovery.** Lose the 6 words and the file is gone forever. Write them down.
-- **Tell the recipient three things:** the 6 cipher words, the **ace mode** used at seal time, and where to fetch the ciphertext.
+- **There is no password recovery.** Lose the words and the file is gone forever. Write them down.
+- **Tell the recipient three things:** the cipher words (6, or **12 in MIL-SPEC**), the **mode** used at seal time, and where to fetch the ciphertext.
 - **Send all three through different channels** if you can. If words + ciphertext + mode all land in the same chat, the encryption protects you from almost nothing.
 - **Do not use this tool for any illegal purpose.** It exists for sharing personal AI-generated anime art among a small private group. Using it to transmit illegal content, harass anyone, distribute material that violates someone's rights, or break local laws is against the spirit of this project. Any such use is entirely the user's responsibility — not the author's.
 - File size is bounded only by your browser's memory budget. Desktop Chrome/Firefox routinely handle several hundred MB per file; mobile browsers cap lower (~150 MB on iOS Safari is typical).
