@@ -39,7 +39,7 @@ So when you share a sealed file, tell the recipient *which mode you sealed it in
 
 ## MIL-SPEC mode (NEW)
 
-Next to the language toggle there's a **MIL-SPEC** switch. It's a seventh, hardened mode — not an anime ace, and it deliberately looks nothing like them. Engage it and the console transforms into a **classified cryptographic authorization terminal**: the ace rail and the MUSE/RZ-7 core bay are stripped away, a **CLASSIFIED // MIL-SPEC** banner drops in, and everything recolors to phosphor amber.
+Next to the language toggle there's a **MIL-SPEC** switch. It's a seventh, hardened mode — not an anime ace, and it deliberately looks nothing like them. Engage it and the whole console becomes a **phosphor-green hacker terminal**: the ace rail and the MUSE/RZ-7 core bay are stripped away, **Matrix-style digital rain** falls behind the panels, a `root@blacksite:~/skystriker` shell header appears, a typed **boot sequence** runs (`> ACCESS GRANTED — MIL-SPEC ONLINE`), and everything recolors to green-on-black with CRT flicker and blinking cursors.
 
 The cipher lock is rebuilt as a **12-segment KEY MATRIX** — a 4×3 keypad with hex segment addresses (`0x00`–`0x0B`) and a per-segment **ARMED** indicator that ignites as you enter each word. Below it, a live **KEY STRENGTH** meter fills and escalates its clearance grade as the matrix fills:
 
@@ -172,7 +172,7 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 
 ## 军规模式 MIL-SPEC（新增）
 
-语言切换按钮旁边有一个 **MIL-SPEC** 开关。它是第七种、强化的模式 —— 不是动漫 ace，外观也刻意与它们完全不同。开启后界面会变成一台**机密密码授权终端**：ace 栏和 MUSE/RZ-7 核心被隐藏，顶部落下 **CLASSIFIED // MIL-SPEC** 横幅，整体重新着色为磷光琥珀。
+语言切换按钮旁边有一个 **MIL-SPEC** 开关。它是第七种、强化的模式 —— 不是动漫 ace，外观也刻意与它们完全不同。开启后整个控制台会变成一台**磷光绿黑客终端**：ace 栏和 MUSE/RZ-7 核心被隐藏，面板后方落下 **Matrix 风格数字雨**，顶部出现 `root@blacksite:~/skystriker` 命令行标题栏，并播放一段逐字打字的**启动序列**（`> ACCESS GRANTED — MIL-SPEC ONLINE`），整体重新着色为绿黑配色，带 CRT 闪烁与闪烁光标。
 
 密码锁会重建为一个 **12 段密钥矩阵** —— 4×3 键盘布局，每段带十六进制地址（`0x00`–`0x0B`）和一个 **ARMED（已装填）** 指示灯，输入每个词时点亮。下方有一条实时**密钥强度**条，随矩阵填满而升级密级：
 
