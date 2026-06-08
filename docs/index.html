@@ -247,22 +247,66 @@
 .ks-bar[data-level="3"] .ks-seg.lit { background: var(--ember); box-shadow: 0 0 6px var(--shadow-h); }
 .ks-bar[data-level="4"] .ks-seg.lit { background: var(--ember-glow); box-shadow: 0 0 9px var(--shadow-r); }
 
-/* CHECKWORD row — MIL-SPEC only (typo-detection aid). */
+/* CHECKWORD row — MIL-SPEC only (typo-detection / auto-verify). A terminal
+   token, not a flat highlight. States: idle / ready / verified / mismatch. */
 .cipher-check { display: none; }
 [data-theme="mil"] .cipher-check {
-  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
-  margin: 0 0 16px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin: 2px 0 18px; padding: 9px 13px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em;
+  background: linear-gradient(180deg, rgba(0,255,102,0.04), rgba(0,8,2,0.5));
+  border: 1px solid var(--red-deep); border-left: 2px solid var(--red-deep);
+  clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 9px 100%, 0 calc(100% - 9px));
+  transition: border-color .25s, box-shadow .25s;
 }
-.cipher-check .cc-label { color: var(--red-deep); text-transform: uppercase; letter-spacing: 0.2em; font-weight: 700; }
+.cipher-check .cc-label { color: var(--red-deep); text-transform: uppercase; letter-spacing: 0.24em; font-weight: 700; }
+.cipher-check .cc-label::before { content: '⬡ '; }
 .cipher-check .cc-word {
-  color: var(--void); background: linear-gradient(180deg, var(--ember-glow), var(--red));
-  padding: 2px 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: lowercase;
-  box-shadow: 0 0 12px var(--shadow-r);
+  display: inline-flex; align-items: center; gap: 7px;
+  color: var(--ember-glow); background: #02160b;
+  border: 1px solid var(--red-deep); padding: 3px 13px;
+  font-weight: 700; letter-spacing: 0.18em; text-transform: lowercase;
+  text-shadow: 0 0 8px var(--shadow-r); box-shadow: inset 0 0 14px rgba(0,255,102,0.07);
   clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+  transition: all .25s;
 }
-.cipher-check:not(.ready) .cc-word { background: var(--steel); color: var(--ash-dim); box-shadow: none; }
+.cipher-check .cc-word::before { content: '::'; color: var(--red-deep); }
+.cipher-check:not(.ready) .cc-word { color: var(--ash-dim); border-color: var(--ash-dim); box-shadow: none; text-shadow: none; }
 .cipher-check.ready .cc-word { animation: ksArm 0.3s ease; }
 .cipher-check .cc-hint { color: var(--ash); font-size: 9px; letter-spacing: 0.1em; }
+
+/* VERIFIED — the "active" state when the recipient's checkword matches the file. */
+[data-theme="mil"] .cipher-check.verified {
+  border-color: var(--red); box-shadow: 0 0 22px rgba(0,255,102,0.18), inset 0 0 26px rgba(0,255,102,0.06);
+}
+.cipher-check.verified .cc-word {
+  color: var(--void); background: linear-gradient(180deg, var(--ember-glow), var(--red));
+  border-color: var(--ember-glow); box-shadow: 0 0 22px var(--shadow-r); text-shadow: none;
+  animation: ccVerify 0.55s ease;
+}
+.cipher-check.verified .cc-word::before { content: '✓'; color: var(--void); }
+.cipher-check.verified .cc-hint { color: var(--ember); }
+@keyframes ccVerify { 0% { transform: scale(0.92); } 45% { transform: scale(1.1); box-shadow: 0 0 32px var(--shadow-r); } 100% { transform: none; } }
+
+/* MISMATCH — typo alert. */
+[data-theme="mil"] .cipher-check.mismatch { border-color: #c23b2e; box-shadow: 0 0 14px rgba(194,59,46,0.25); }
+.cipher-check.mismatch .cc-word {
+  color: #ffd2cc; background: rgba(194,59,46,0.16); border-color: #c23b2e;
+  text-shadow: 0 0 8px rgba(255,106,85,0.5); box-shadow: none; animation: ccShake 0.3s steps(2);
+}
+.cipher-check.mismatch .cc-word::before { content: '✗'; color: #ff6a55; }
+.cipher-check.mismatch .cc-hint { color: #ff8a78; }
+@keyframes ccShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+
+/* Full-screen green verify pulse (fired by milVerifyFx on a match). */
+#milVerify {
+  position: fixed; inset: 0; z-index: 4500; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(0,255,102,0.12), transparent 60%),
+    repeating-linear-gradient(0deg, rgba(0,255,102,0.05) 0 2px, transparent 2px 5px);
+  animation: milVerifyFlash 0.72s ease forwards;
+}
+@keyframes milVerifyFlash { 0% { opacity: 0; } 22% { opacity: 1; } 100% { opacity: 0; } }
 
 /* Richer classified banner: hazard ends + a live control code on the right. */
 [data-theme="mil"] .mil-banner {
@@ -366,20 +410,31 @@
 [data-theme="mil"] .status-block .led { background: var(--red); box-shadow: 0 0 8px var(--shadow-r); }
 
 /* 4. TABS — terminal mode selector: hard keys, lit-amber active state. */
-[data-theme="mil"] .tabs { gap: 0; border: 1px solid var(--red-deep); }
+[data-theme="mil"] .tabs { gap: 0; border: 1px solid var(--red-deep); background: rgba(0,8,2,0.5); }
 [data-theme="mil"] .tab-btn {
-  text-transform: uppercase; letter-spacing: 0.22em; font-weight: 700; font-size: 12px;
+  text-transform: uppercase; letter-spacing: 0.24em; font-weight: 700; font-size: 12px;
   border: none; border-right: 1px solid var(--red-deep);
-  background: rgba(0,0,0,0.35); color: var(--ash);
+  background: transparent; color: var(--ash);
+  position: relative; overflow: hidden;
 }
 [data-theme="mil"] .tab-btn:last-child { border-right: none; }
 [data-theme="mil"] .tab-btn .idx { color: var(--red-deep); letter-spacing: 0.2em; }
-[data-theme="mil"] .tab-btn:hover { background: var(--red-soft); color: var(--ember); }
-[data-theme="mil"] .tab-btn.active {
-  background: linear-gradient(180deg, var(--ember), var(--red));
-  color: var(--void); box-shadow: inset 0 0 0 1px var(--ember-glow), 0 0 18px rgba(255,176,0,0.35);
+/* scanline texture, lit on hover/active — gives the selected tab a CRT feel */
+[data-theme="mil"] .tab-btn::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,255,102,0.10) 0 1px, transparent 1px 3px);
+  transition: opacity .25s;
 }
-[data-theme="mil"] .tab-btn.active .idx { color: rgba(10,10,6,0.7); }
+[data-theme="mil"] .tab-btn:hover { color: var(--ember); }
+[data-theme="mil"] .tab-btn:hover::after { opacity: .4; }
+[data-theme="mil"] .tab-btn.active {
+  background: linear-gradient(180deg, rgba(0,255,102,0.14), rgba(0,255,102,0.02));
+  color: var(--ember-glow); text-shadow: 0 0 12px var(--shadow-r);
+  box-shadow: inset 0 -2px 0 var(--red), inset 0 0 26px rgba(0,255,102,0.10);
+}
+[data-theme="mil"] .tab-btn.active::after { opacity: .35; animation: milTabScan 2.6s linear infinite; }
+[data-theme="mil"] .tab-btn.active .idx { color: var(--red); }
+@keyframes milTabScan { from { background-position: 0 0; } to { background-position: 0 9px; } }
 
 /* 5. PANELS — dossier: hard rectangular border, blueprint fill, top caution strip. */
 [data-theme="mil"] .panel {
@@ -3495,6 +3550,10 @@ const I18N = {
     'check.label':      'CHECKWORD',
     'check.hintSeal':   'tell the recipient — they verify before breaching',
     'check.hintBreach': 'must match what the sender shared',
+    'check.matched':    '✓ verified — words match the file',
+    'check.mismatch':   (w) => `✗ typo? file expects “${w}”`,
+    'toast.checkVerified': 'Checkword verified ✓ — your words match the file.',
+    'toast.checkMismatch': (w) => `Checkword mismatch — likely a typo. The file expects “${w}”.`,
     'toast.copyFail':    'Clipboard blocked — copy them manually.',
     'toast.cardSaved':   'Key card downloaded. Keep it offline.',
     'mil.banner':   'CLASSIFIED // MIL-SPEC // PBKDF2-1,000,000 ROUNDS // EYES ONLY',
@@ -3584,6 +3643,10 @@ const I18N = {
     'check.label':      '校验词',
     'check.hintSeal':   '把它告诉接收方 —— 破封前用于核对',
     'check.hintBreach': '必须与发送方给的校验词一致',
+    'check.matched':    '✓ 已核对 —— 与文件一致',
+    'check.mismatch':   (w) => `✗ 可能打错？文件要求「${w}」`,
+    'toast.checkVerified': '校验词通过 ✓ —— 你的词与文件一致。',
+    'toast.checkMismatch': (w) => `校验词不一致 —— 可能打错了。文件要求「${w}」。`,
     'toast.copyFail':    '剪贴板被拦截 — 请手动复制。',
     'toast.cardSaved':   '密钥卡已下载，请离线保管。',
     'mil.banner':   '机密 // 军规模式 // PBKDF2-1,000,000 轮 // 仅限授权',
@@ -3726,6 +3789,9 @@ const ACE_STORAGE_KEY = 'skystriker-theme';
 // must NOT touch the grids — bootAceMode() runs before the grids exist, and the
 // initial build will apply the booted mode's slot count itself.
 let gridsReady = false;
+// Checkword embedded in the currently-loaded v4 (MIL) packet, if any. Declared
+// here because updateCipherCheck() reads it during init (rebuildCipherGrids).
+let loadedCheckword = null;
 
 function setAceMode(key, opts = {}) {
   const cfg = ACE_MODES[key];
@@ -3902,6 +3968,15 @@ function milGlitchBurst() {
   setTimeout(() => g.remove(), 660);
   const fr = document.querySelector('.frame');
   if (fr) { fr.classList.add('mil-shake'); setTimeout(() => fr.classList.remove('mil-shake'), 480); }
+}
+// Celebratory "active" effect when the recipient's checkword matches the file.
+function milVerifyFx() {
+  toast(t('toast.checkVerified'), 'ok', 'extracted');
+  document.getElementById('milVerify')?.remove();
+  const v = document.createElement('div');
+  v.id = 'milVerify';
+  document.body.appendChild(v);
+  setTimeout(() => v.remove(), 720);
 }
 function milFxApply(on, justEntered) {
   if (on) {
@@ -4125,7 +4200,28 @@ function updateCipherCheck(container, outEl) {
   if (!container || !outEl) return;
   const cw = cipherCheckWord([...container.querySelectorAll('input')].map(i => i.value));
   outEl.textContent = cw || '—';
-  outEl.closest('.cipher-check')?.classList.toggle('ready', !!cw);
+  const row = outEl.closest('.cipher-check');
+  if (!row) return;
+  row.classList.toggle('ready', !!cw);
+
+  // Breach side auto-verify: if the loaded packet embedded a checkword (v4/MIL),
+  // compare it to what the recipient typed — no manual checking needed.
+  if (outEl.id === 'decCheck') {
+    const expected = loadedCheckword;
+    const matched = !!(cw && expected && cw === expected);
+    const mismatched = !!(cw && expected && cw !== expected);
+    row.classList.toggle('verified', matched);
+    row.classList.toggle('mismatch', mismatched);
+    const hint = row.querySelector('.cc-hint');
+    if (hint) {
+      hint.textContent = matched ? t('check.matched')
+        : mismatched ? t('check.mismatch', expected)
+        : t('check.hintBreach');
+    }
+    // Fire the celebratory "active" effect once, on the transition into match.
+    if (matched && row.dataset.wasMatched !== '1') { row.dataset.wasMatched = '1'; milVerifyFx(); }
+    if (!matched) row.dataset.wasMatched = '0';
+  }
 }
 
 // Grids were built above; now that WORD_BITS exists, apply the booted mode's
@@ -4286,6 +4382,7 @@ async function deriveKey(words, salt, pepper, iterations = STD_ITERS) {
 const MAGIC = new Uint8Array([0x53, 0x53, 0x41, 0x45]); // "SSAE"
 const VERSION = 0x02;            // legacy packets (still breachable — read as 310K)
 const VERSION3 = 0x03;           // v3 = v2 + an explicit 4-byte KDF-iterations field
+const VERSION4 = 0x04;           // v4 = v3 + a 2-byte checkword index (MIL-SPEC auto-verify)
 const SALT_LEN = 16;
 const IV_LEN = 12;
 const STD_ITERS = 310000;        // standard ace modes
@@ -4305,6 +4402,12 @@ function concatBytes(...parts) {
 function u32be(n) {
   const b = new Uint8Array(4);
   new DataView(b.buffer).setUint32(0, n >>> 0, false);
+  return b;
+}
+
+function u16be(n) {
+  const b = new Uint8Array(2);
+  new DataView(b.buffer).setUint16(0, n & 0xffff, false);
   return b;
 }
 
@@ -4354,6 +4457,29 @@ function b64ToBytes(b64) {
    work on the full string without ever asking the textarea to render it.
 */
 let fullCipherIn = ''; // currently-loaded cipher for decryption (decode side)
+// NOTE: `loadedCheckword` is declared much earlier (near gridsReady) because
+// updateCipherCheck() reads it during init, before this point in the script.
+
+/* Peek only the packet header to recover an embedded checkword (v4/MIL) without
+   decoding the whole — possibly huge — payload. Returns the checkword or null. */
+function headerCheckword(b64) {
+  try {
+    const head = (b64 || '').replace(/\s+/g, '').slice(0, 32);
+    if (head.length < 16) return null;
+    const bin = atob(head.slice(0, Math.floor(head.length / 4) * 4));
+    if (bin.length < 11) return null;
+    for (let i = 0; i < 4; i++) if (bin.charCodeAt(i) !== MAGIC[i]) return null;
+    if (bin.charCodeAt(4) !== VERSION4) return null;          // only v4 carries one
+    return WORDLIST[(bin.charCodeAt(9) << 8) | bin.charCodeAt(10)] || null;
+  } catch { return null; }
+}
+function refreshExpectedCheckword() {
+  const b64 = fullCipherIn || $('#decInput')?.value || '';
+  loadedCheckword = headerCheckword(b64.trim());
+  updateCipherCheck($('#decCipher'), $('#decCheck'));
+}
+// Re-read the expected checkword whenever the pasted cipher changes.
+$('#decInput')?.addEventListener('input', refreshExpectedCheckword);
 
 /* Decide what the user sees in the textarea after a large cipher is loaded.
    The full string is already cached for Copy/Save/Decrypt — this controls the
@@ -4523,6 +4649,10 @@ $('#btnEncrypt').addEventListener('click', async () => {
     const salt = crypto.getRandomValues(new Uint8Array(SALT_LEN));
     setProgress(progress, 18);
     const iterations = itersForMode(currentMode());
+    // MIL-SPEC: embed the checkword index so the recipient's app can auto-verify
+    // the typed words (no manual comparison). Ace modes stay v3 (no checkword).
+    const sealIsMil = currentMode() === 'mil';
+    const checkIdx = sealIsMil ? Math.max(0, WORDLIST.indexOf(cipherCheckWord(words))) : -1;
     const key = await deriveKey(words, salt, getCurrentPepper(), iterations);
     setProgress(progress, 35);
 
@@ -4536,7 +4666,9 @@ $('#btnEncrypt').addEventListener('click', async () => {
     const results = await Promise.all(encFiles.map(async (file, i) => {
       try {
         const { iv, cipher } = await encryptOne(file, key);
-        const packet = concatBytes(MAGIC, new Uint8Array([VERSION3]), u32be(iterations), salt, iv, cipher);
+        const packet = sealIsMil
+          ? concatBytes(MAGIC, new Uint8Array([VERSION4]), u32be(iterations), u16be(checkIdx), salt, iv, cipher)
+          : concatBytes(MAGIC, new Uint8Array([VERSION3]), u32be(iterations), salt, iv, cipher);
         const b64 = bytesToB64(packet);
         done++;
         setProgress(progress, 35 + Math.floor((done / total) * 60));
@@ -5047,7 +5179,18 @@ $('#btnDecrypt').addEventListener('click', async () => {
   try {
     setProgress(progress, 12);
     const packet = b64ToBytes(b64);
-    const { salt, iv, cipher, iterations } = parsePacketBytes(packet);
+    const { salt, iv, cipher, iterations, checkword } = parsePacketBytes(packet);
+
+    // Auto-verify the words against the packet's embedded checkword (v4/MIL)
+    // BEFORE the expensive KDF — a precise "typo" message beats a generic fail.
+    if (checkword) {
+      loadedCheckword = checkword;
+      updateCipherCheck($('#decCipher'), $('#decCheck'));
+      const typed = cipherCheckWord(words);
+      if (typed && typed !== checkword) {
+        throw new Error(t('toast.checkMismatch', checkword));
+      }
+    }
 
     setProgress(progress, 35);
     // Strict mode binding: only the currently-selected ace mode's pepper is
@@ -5151,6 +5294,7 @@ $('#btnDecReset').addEventListener('click', () => {
   decDrop.classList.remove('armed');
   decMeta.classList.add('hidden');
   $$('#decCipher input').forEach(i => i.value = '');
+  loadedCheckword = null;
   updateCipherCheck($('#decCipher'), $('#decCheck'));
   $('#decPreview').classList.add('hidden');
   // lastDecrypted may point at a bundle-owned URL — bundle owns its blobs, so
@@ -5198,8 +5342,13 @@ function parsePacketBytes(bytes) {
   if (bytes.length < 5) throw new Error('Packet too small or malformed.');
   for (let i = 0; i < 4; i++) if (bytes[i] !== MAGIC[i]) throw new Error('Magic mismatch — not a Sky Striker packet.');
   const version = bytes[4];
-  let off = 5, iterations;
-  if (version === VERSION3) {
+  let off = 5, iterations, checkword = null;
+  if (version === VERSION4) {
+    if (bytes.length < 5 + 4 + 2 + SALT_LEN + IV_LEN + 16) throw new Error('Packet too small or malformed.');
+    const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    iterations = dv.getUint32(off, false); off += 4;
+    checkword = WORDLIST[dv.getUint16(off, false)] || null; off += 2;
+  } else if (version === VERSION3) {
     if (bytes.length < 5 + 4 + SALT_LEN + IV_LEN + 16) throw new Error('Packet too small or malformed.');
     iterations = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(off, false);
     off += 4;
@@ -5214,7 +5363,7 @@ function parsePacketBytes(bytes) {
   const salt = bytes.subarray(off, off + SALT_LEN); off += SALT_LEN;
   const iv = bytes.subarray(off, off + IV_LEN); off += IV_LEN;
   const cipher = bytes.subarray(off);
-  return { salt, iv, cipher, version, iterations };
+  return { salt, iv, cipher, version, iterations, checkword };
 }
 
 function bytesToHex(bytes) {
@@ -5315,6 +5464,7 @@ function ingestCipherText(text) {
   disarmBundle({ keepTextarea: true, silent: true });
   fullCipherIn = text.trim();
   $('#decInput').value = buildOutputPreview(fullCipherIn, null);
+  refreshExpectedCheckword();
   return 'single';
 }
 

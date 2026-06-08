@@ -51,7 +51,7 @@ What it actually changes under the hood:
 - **PBKDF2 is hardened from 310,000 → 1,000,000 iterations** — far slower to brute-force a weak passphrase.
 - **Its own pepper**, exactly like the ace modes — a MIL-SPEC packet can ONLY be breached in MIL-SPEC mode.
 - The iteration count is **written into the packet (v3 format)**, so the recipient just selects MIL-SPEC and breaches — no extra coordination needed beyond the mode + the **12 words**.
-- **Checkword typo-guard:** a single word derived from your *full* entered key shows live below the matrix. The sender shares it (it's also on the key card); the recipient compares their checkword before breaching — a typo flips it ~7775/7776 of the time, so mistakes are caught instantly instead of as a cryptic "breach failed." It's a local UX aid only: **not stored in the packet and not mixed into the key**, so it leaks nothing.
+- **Checkword auto-verify:** a single word derived from your *full* entered key. **MIL-SPEC packets embed it (v4 format)**, so the recipient doesn't have to check anything by hand — when they load the file and type the words, the app **auto-verifies**: a green **"✓ verified"** with an active pulse the instant they match, or a precise **"✗ typo — file expects ‹word›"** instead of a cryptic "breach failed." It's still shown on the seal side and on the key card too. The checkword is ~13 bits and is **never mixed into the AES key**; embedding it costs ~13 bits of the ~155-bit MIL key (negligible). Backward-compatible: ace packets stay v3.
 
 The word count *is* the mode: selecting MIL-SPEC renders 12 segments on both the seal and breach sides, so the recipient simply switches to MIL-SPEC and the grid asks for the right number of words. Pair it with **⚄ Generate** for a full ≈ 155-bit random key and it's genuinely strong.
 
@@ -118,7 +118,7 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 - **Per-mode pepper:** each mode (six aces + MIL-SPEC) has its own secret pepper baked into the page and appended to the password before PBKDF2. The mode therefore acts as a second factor.
 - **Parallel sealing:** multi-file batches derive the AES key once and encrypt all files in parallel with unique IVs, giving near-linear speedup.
 - **Parallel breaching:** when a JSON bundle is loaded, the receiver groups ciphers by salt (one PBKDF2 per unique salt — usually just one for a same-batch bundle), then runs all AES-GCM decrypts in parallel.
-- **Packet format:** base64-encoded. **v3** (current): `MAGIC(4) | 0x03 | ITERATIONS(4, big-endian) | SALT(16) | IV(12) | CIPHERTEXT` — the KDF iteration count travels in the packet so any strength breaches without extra coordination. **v2** (`MAGIC | 0x02 | SALT | IV | CIPHERTEXT`, fixed 310K) is still fully readable, so older sealed files keep working.
+- **Packet format:** base64-encoded. **v4** (MIL-SPEC): `MAGIC(4) | 0x04 | ITERATIONS(4, big-endian) | CHECKWORD-INDEX(2) | SALT(16) | IV(12) | CIPHERTEXT` — adds the 2-byte checkword index for auto-verify. **v3** (ace modes): `MAGIC(4) | 0x03 | ITERATIONS(4) | SALT(16) | IV(12) | CIPHERTEXT` — the KDF iteration count travels in the packet so any strength breaches without extra coordination. **v2** (`MAGIC | 0x02 | SALT | IV | CIPHERTEXT`, fixed 310K) is still fully readable, so older sealed files keep working.
 - **Bundle format:** `[{"filename": "...", "cipher": "..."}, ...]` — a plain JSON array of single-cipher entries. Saved as `skystriker-bundle-<ISO-timestamp>-<N>files.json`.
 - **Zero network during crypto.** No server calls during encrypt or decrypt. Your words never leave your browser.
 
@@ -185,7 +185,7 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 - **PBKDF2 从 310,000 轮提升到 1,000,000 轮** —— 弱口令被暴力破解会慢得多。
 - **拥有独立 pepper**，和各 ace 模式一样 —— 军规模式封的包只能在军规模式下破封。
 - 迭代次数**写入数据包（v3 格式）**，接收方只需选中 MIL-SPEC 即可破封，除模式 + **12 词**外无需额外协调。
-- **校验词防错：** 矩阵下方实时显示一个由你*完整*密钥推导出的单词。发送方把它告诉对方（密钥卡上也有），接收方破封前核对自己的校验词 —— 任意打错一个词都会以约 7775/7776 的概率改变它，于是输入错误能被立即发现，而不是只得到一句模糊的"破封失败"。它仅是本地辅助：**不写入数据包、也不混入密钥**，因此不泄露任何信息。
+- **校验词自动核对：** 一个由你*完整*密钥推导出的单词。**军规模式数据包会把它写入文件（v4 格式）**，所以接收方无需手动核对 —— 载入文件并输入密码词后，程序会**自动校验**：一致时立刻显示绿色 **"✓ 已核对"** 并伴随脉冲特效，打错时则给出精确提示 **"✗ 可能打错？文件要求‹某词›"**，而不是一句模糊的"破封失败"。封印侧和密钥卡上同样会显示。校验词约 13 位，**绝不混入 AES 密钥**；写入文件只占约 155 位军规密钥中的约 13 位（可忽略）。向后兼容：ace 数据包仍为 v3。
 
 词数即模式：选中 MIL-SPEC 后，封印侧和破封侧都会渲染 12 段，接收方只要切到 MIL-SPEC，密码格自然就会要求正确的词数。配合 **⚄ 随机生成** 得到完整的约 155 位随机密钥，强度十分扎实。
 
@@ -252,7 +252,7 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 - **模式专属 pepper**：每个模式（六个 ace + MIL-SPEC）有自己的 pepper（密码混入串），加入到密码词中后再进行 PBKDF2，模式本身成为第二认证因素。
 - **并行封印**：批量上传时只推导一次 AES 密钥，所有文件用各自独立的 IV 并行加密，近似线性加速。
 - **并行破封**：加载 JSON 密文包时，接收端按 salt 分组（一组只跑一次 PBKDF2 —— 同批次封印的密文包通常只有一组），然后所有 AES-GCM 解密并行执行。
-- **数据包格式**：base64 编码。**v3**（当前）：`MAGIC(4) | 0x03 | 迭代次数(4，大端) | SALT(16) | IV(12) | 密文` —— 迭代次数随包传递，任意强度都能直接破封。**v2**（`MAGIC | 0x02 | SALT | IV | 密文`，固定 31 万）仍可完整读取，旧密文继续可用。
+- **数据包格式**：base64 编码。**v4**（军规模式）：`MAGIC(4) | 0x04 | 迭代次数(4，大端) | 校验词索引(2) | SALT(16) | IV(12) | 密文` —— 增加 2 字节校验词索引用于自动核对。**v3**（ace 模式）：`MAGIC(4) | 0x03 | 迭代次数(4) | SALT(16) | IV(12) | 密文` —— 迭代次数随包传递，任意强度都能直接破封。**v2**（`MAGIC | 0x02 | SALT | IV | 密文`，固定 31 万）仍可完整读取，旧密文继续可用。
 - **密文包格式**：`[{"filename": "...", "cipher": "..."}, ...]` —— 单个密文条目的 JSON 数组。保存文件名为 `skystriker-bundle-<ISO 时间戳>-<N>files.json`。
 - **加解密过程零网络**。没有任何服务器请求，密码词不会离开你的浏览器。
 
