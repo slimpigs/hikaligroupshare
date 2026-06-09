@@ -336,6 +336,10 @@
 .ms-cam.live { display: block; }
 .ms-cam video { width: 100%; max-width: 320px; border: 1px solid var(--red); display: block; box-shadow: 0 0 18px rgba(0,255,102,0.18); }
 
+/* Link/cipher QR scan row in the Fetch area — general (all modes). */
+.url-qr { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 9px 0 2px; }
+.url-qr .uq-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em; color: var(--ash); text-transform: uppercase; }
+
 /* Richer classified banner: hazard ends + a live control code on the right. */
 [data-theme="mil"] .mil-banner {
   background: linear-gradient(180deg, rgba(255,176,0,0.10), rgba(255,176,0,0.02));
@@ -3439,6 +3443,13 @@ body[data-mode="decode"] .rail-pulse {
       <input type="url" id="decUrl" placeholder="paste github raw .txt url, gist, or any direct cipher link…" data-i18n-attr="placeholder:urlPh" spellcheck="false" autocomplete="off">
       <button class="fetch-btn" id="btnFetchUrl" data-i18n="btn.fetch">Fetch</button>
     </div>
+    <div class="url-qr">
+      <span class="uq-label" data-i18n="urlqr.label">or scan a QR of the link/cipher:</span>
+      <button class="forge-btn" id="btnUrlScanCam" type="button">📷 <span data-i18n="scan.cam">CAMERA</span></button>
+      <label class="forge-btn" for="urlScanImgInput">🖼 <span data-i18n="scan.img">IMAGE</span></label>
+      <input type="file" id="urlScanImgInput" accept="image/*" hidden>
+    </div>
+    <div class="ms-cam" id="urlScanCam"><video id="urlScanVideo" playsinline muted></video></div>
     <div class="url-status" id="urlStatus"></div>
     <div class="xmit-readout" id="xmitReadout" aria-hidden="true"></div>
 
@@ -3651,6 +3662,10 @@ const I18N = {
     'scan.manualPh':'…or paste pepper',
     'scan.need':    'PEPPER REQUIRED',
     'scan.ok':      'PEPPER LOADED',
+    'urlqr.label':  'or scan a QR of the link / cipher:',
+    'toast.qrCipher':  'Loaded the cipher from the QR.',
+    'toast.qrText':    'Loaded the QR text into the URL field.',
+    'toast.qrIsPepper':"That's a pepper QR — scan it in the PEPPER KEY box below, not here.",
     'toast.copyFail':    'Clipboard blocked — copy them manually.',
     'toast.cardSaved':   'Key card downloaded. Keep it offline.',
     'mil.banner':   'CLASSIFIED // MIL-SPEC // PBKDF2-1,000,000 ROUNDS // EYES ONLY',
@@ -3760,6 +3775,10 @@ const I18N = {
     'scan.manualPh':'…或粘贴 pepper',
     'scan.need':    '需要 PEPPER',
     'scan.ok':      'PEPPER 已载入',
+    'urlqr.label':  '或扫描链接／密文的二维码：',
+    'toast.qrCipher':  '已从二维码载入密文。',
+    'toast.qrText':    '已把二维码文本载入到 URL 框。',
+    'toast.qrIsPepper':'这是 pepper 二维码 —— 请在下方 PEPPER KEY 区扫描，而不是这里。',
     'toast.copyFail':    '剪贴板被拦截 — 请手动复制。',
     'toast.cardSaved':   '密钥卡已下载，请离线保管。',
     'mil.banner':   '机密 // 军规模式 // PBKDF2-1,000,000 轮 // 仅限授权',
@@ -3910,7 +3929,7 @@ let loadedCheckword = null;
 const QR_PREFIX = 'SSKP1:';   // Sky Striker Key Pepper, v1 — wraps the pepper in the QR
 let milPepper = null;         // active random pepper (seal side)
 let scannedPepper = null;     // pepper recovered for breaching a v5 packet
-let scanStream = null, scanRAF = null;
+let scanStream = null, scanRAF = null, scanVideoSel = null, scanCamSel = null;
 
 function setAceMode(key, opts = {}) {
   const cfg = ACE_MODES[key];
@@ -4552,7 +4571,9 @@ function applyScannedText(text) {
   return true;
 }
 function decodeQrImageData(d) { try { const r = jsQR(d.data, d.width, d.height); return r ? r.data : null; } catch { return null; } }
-function scanImageFile(file) {
+// Generic QR scanners — a callback consumes the decoded text. onText may return
+// `false` to keep the camera scanning (e.g. a wrong QR); anything else stops it.
+function scanQrImage(file, onText) {
   const url = URL.createObjectURL(file), img = new Image();
   img.onload = () => {
     const maxd = 1600, s = Math.min(1, maxd / Math.max(img.width, img.height));
@@ -4561,18 +4582,20 @@ function scanImageFile(file) {
     const ctx = cv.getContext('2d', { willReadFrequently: true }); ctx.drawImage(img, 0, 0, w, h);
     URL.revokeObjectURL(url);
     const text = decodeQrImageData(ctx.getImageData(0, 0, w, h));
-    if (text) applyScannedText(text); else toast(t('toast.qrBad'), 'err', 'abort');
+    if (text) onText(text); else toast(t('toast.qrBad'), 'err', 'abort');
   };
   img.onerror = () => { URL.revokeObjectURL(url); toast(t('toast.qrBad'), 'err', 'abort'); };
   img.src = url;
 }
-async function startCamera() {
-  const video = $('#scanVideo');
+async function startQrCamera(videoSel, camSel, onText) {
+  if (scanStream) { stopCamera(); return; }            // toggle off (one camera at a time)
+  const video = $(videoSel);
   if (!navigator.mediaDevices?.getUserMedia) return toast(t('toast.noCamera'), 'err', 'abort');
   try { scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); }
   catch { return toast(t('toast.noCamera'), 'err', 'abort'); }
+  scanVideoSel = videoSel; scanCamSel = camSel;
   video.srcObject = scanStream; await video.play();
-  $('#scanCam')?.classList.add('live');
+  $(camSel)?.classList.add('live');
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d', { willReadFrequently: true });
   (function tick() {
     if (!scanStream) return;
@@ -4580,7 +4603,7 @@ async function startCamera() {
       cv.width = video.videoWidth; cv.height = video.videoHeight;
       ctx.drawImage(video, 0, 0, cv.width, cv.height);
       const text = decodeQrImageData(ctx.getImageData(0, 0, cv.width, cv.height));
-      if (text && applyScannedText(text)) { stopCamera(); return; }
+      if (text && onText(text) !== false) { stopCamera(); return; }
     }
     scanRAF = requestAnimationFrame(tick);
   })();
@@ -4588,21 +4611,45 @@ async function startCamera() {
 function stopCamera() {
   if (scanRAF) { cancelAnimationFrame(scanRAF); scanRAF = null; }
   if (scanStream) { scanStream.getTracks().forEach(tr => tr.stop()); scanStream = null; }
-  const v = $('#scanVideo'); if (v) v.srcObject = null;
-  $('#scanCam')?.classList.remove('live');
+  if (scanVideoSel) { const v = $(scanVideoSel); if (v) v.srcObject = null; }
+  if (scanCamSel) $(scanCamSel)?.classList.remove('live');
+  scanVideoSel = scanCamSel = null;
 }
 function updateScanUI() {
   const row = $('#scanStatus');
   if (row) { row.classList.toggle('ok', !!scannedPepper); row.textContent = scannedPepper ? t('scan.ok') : t('scan.need'); }
   const man = $('#scanManual'); if (man && scannedPepper && man.value.trim() !== scannedPepper) man.value = scannedPepper;
 }
-$('#btnScanCam')?.addEventListener('click', () => { if (scanStream) stopCamera(); else startCamera(); });
-$('#scanImgInput')?.addEventListener('change', (e) => { const f = e.target.files?.[0]; if (f) scanImageFile(f); e.target.value = ''; });
+// Pepper scanner (MIL breach) → applyScannedText.
+$('#btnScanCam')?.addEventListener('click', () => startQrCamera('#scanVideo', '#scanCam', applyScannedText));
+$('#scanImgInput')?.addEventListener('change', (e) => { const f = e.target.files?.[0]; if (f) scanQrImage(f, applyScannedText); e.target.value = ''; });
 $('#scanManual')?.addEventListener('input', (e) => {
   const v = e.target.value.trim();
   scannedPepper = v ? (v.indexOf(QR_PREFIX) === 0 ? v.slice(QR_PREFIX.length) : v) : null;
   updateScanUI();
 });
+
+// Link/cipher QR scanner (all modes) → drop a scanned share-link into Fetch, or
+// load a scanned cipher directly. Returns false to keep scanning a wrong QR.
+function handleFetchQr(text) {
+  text = (text || '').trim();
+  if (!text) return false;
+  if (text.indexOf(QR_PREFIX) === 0) { toast(t('toast.qrIsPepper'), 'err', 'abort'); return false; }  // pepper QR — wrong scanner
+  if (/^https?:\/\//i.test(text) || /mega(?:\.co)?\.nz/i.test(text)) {
+    $('#decUrl').value = text;
+    setUrlStatus('QR → fetching ' + text.slice(0, 48) + '…', 'busy');
+    $('#btnFetchUrl').click();
+  } else if (looksLikeCipher(text)) {
+    ingestCipherText(text);
+    toast(t('toast.qrCipher'), 'ok', 'fetch');
+  } else {
+    $('#decUrl').value = text;
+    toast(t('toast.qrText'), 'ok', 'fetch');
+  }
+  return true;
+}
+$('#btnUrlScanCam')?.addEventListener('click', () => startQrCamera('#urlScanVideo', '#urlScanCam', handleFetchQr));
+$('#urlScanImgInput')?.addEventListener('change', (e) => { const f = e.target.files?.[0]; if (f) scanQrImage(f, handleFetchQr); e.target.value = ''; });
 
 
 function readCipherWords(container) {
