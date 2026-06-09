@@ -52,6 +52,7 @@ What it actually changes under the hood:
 - **Its own pepper**, exactly like the ace modes — a MIL-SPEC packet can ONLY be breached in MIL-SPEC mode.
 - The iteration count is **written into the packet (v3 format)**, so the recipient just selects MIL-SPEC and breaches — no extra coordination needed beyond the mode + the **12 words**.
 - **Checkword auto-verify:** a single word derived from your *full* entered key. **MIL-SPEC packets embed it (v4 format)**, so the recipient doesn't have to check anything by hand — when they load the file and type the words, the app **auto-verifies**: a green **"✓ verified"** with an active pulse the instant they match, or a precise **"✗ typo — file expects ‹word›"** instead of a cryptic "breach failed." It's still shown on the seal side and on the key card too. The checkword is ~13 bits and is **never mixed into the AES key**; embedding it costs ~13 bits of the ~155-bit MIL key (negligible). Backward-compatible: ace packets stay v3.
+- **Random pepper + QR key (v5):** every MIL-SPEC seal now mixes in a fresh **random 144-bit pepper**, so security no longer rests only on the page's baked-in value — the pepper becomes a real second secret. It is **never written into the encrypted file**; it travels in a **QR code**. One button — **KEY PACKAGE** — downloads two files: a directly-scannable **`pepper-qr.png`** and a printable **`cipher-card.pdf`** (the 12 words + pepper + checkword + the QR drawn on it). To breach, the recipient recovers the pepper on the BREACH side by **scanning the QR with their phone camera, uploading the QR image, or pasting the pepper text**, then enters the words. **Lose the QR/card and the file is unrecoverable** — send the QR on a different channel from the ciphertext. MIL-only; ace modes keep their fixed pepper and `.txt` key card, and v2/v3/v4 files still breach normally. (QR generation = qrcode-generator, decoding = jsQR, both vendored into the page so it stays offline.)
 
 The word count *is* the mode: selecting MIL-SPEC renders 12 segments on both the seal and breach sides, so the recipient simply switches to MIL-SPEC and the grid asks for the right number of words. Pair it with **⚄ Generate** for a full ≈ 155-bit random key and it's genuinely strong.
 
@@ -118,7 +119,7 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 - **Per-mode pepper:** each mode (six aces + MIL-SPEC) has its own secret pepper baked into the page and appended to the password before PBKDF2. The mode therefore acts as a second factor.
 - **Parallel sealing:** multi-file batches derive the AES key once and encrypt all files in parallel with unique IVs, giving near-linear speedup.
 - **Parallel breaching:** when a JSON bundle is loaded, the receiver groups ciphers by salt (one PBKDF2 per unique salt — usually just one for a same-batch bundle), then runs all AES-GCM decrypts in parallel.
-- **Packet format:** base64-encoded. **v4** (MIL-SPEC): `MAGIC(4) | 0x04 | ITERATIONS(4, big-endian) | CHECKWORD-INDEX(2) | SALT(16) | IV(12) | CIPHERTEXT` — adds the 2-byte checkword index for auto-verify. **v3** (ace modes): `MAGIC(4) | 0x03 | ITERATIONS(4) | SALT(16) | IV(12) | CIPHERTEXT` — the KDF iteration count travels in the packet so any strength breaches without extra coordination. **v2** (`MAGIC | 0x02 | SALT | IV | CIPHERTEXT`, fixed 310K) is still fully readable, so older sealed files keep working.
+- **Packet format:** base64-encoded. **v5** (MIL-SPEC, current): same bytes as v4 but version `0x05` flags "pepper is an external random secret" (carried in the QR, not in the file). **v4** (MIL-SPEC): `MAGIC(4) | 0x04 | ITERATIONS(4, big-endian) | CHECKWORD-INDEX(2) | SALT(16) | IV(12) | CIPHERTEXT` — adds the 2-byte checkword index for auto-verify. **v3** (ace modes): `MAGIC(4) | 0x03 | ITERATIONS(4) | SALT(16) | IV(12) | CIPHERTEXT` — the KDF iteration count travels in the packet so any strength breaches without extra coordination. **v2** (`MAGIC | 0x02 | SALT | IV | CIPHERTEXT`, fixed 310K) is still fully readable, so older sealed files keep working.
 - **Bundle format:** `[{"filename": "...", "cipher": "..."}, ...]` — a plain JSON array of single-cipher entries. Saved as `skystriker-bundle-<ISO-timestamp>-<N>files.json`.
 - **Zero network during crypto.** No server calls during encrypt or decrypt. Your words never leave your browser.
 
@@ -186,6 +187,7 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 - **拥有独立 pepper**，和各 ace 模式一样 —— 军规模式封的包只能在军规模式下破封。
 - 迭代次数**写入数据包（v3 格式）**，接收方只需选中 MIL-SPEC 即可破封，除模式 + **12 词**外无需额外协调。
 - **校验词自动核对：** 一个由你*完整*密钥推导出的单词。**军规模式数据包会把它写入文件（v4 格式）**，所以接收方无需手动核对 —— 载入文件并输入密码词后，程序会**自动校验**：一致时立刻显示绿色 **"✓ 已核对"** 并伴随脉冲特效，打错时则给出精确提示 **"✗ 可能打错？文件要求‹某词›"**，而不是一句模糊的"破封失败"。封印侧和密钥卡上同样会显示。校验词约 13 位，**绝不混入 AES 密钥**；写入文件只占约 155 位军规密钥中的约 13 位（可忽略）。向后兼容：ace 数据包仍为 v3。
+- **随机 pepper + QR 密钥（v5）：** 现在每次军规模式封印都会混入一个全新的**随机 144 位 pepper**，安全性不再只依赖页面内置值 —— pepper 成为真正的第二重密钥。它**绝不写入加密文件**，而是保存在一个 **QR 码**里。一个按钮 —— **密钥包** —— 下载两个文件：可直接扫描的 **`pepper-qr.png`** 和可打印的 **`cipher-card.pdf`**（含 12 个词 + pepper + 校验词，并在卡上绘制了 QR）。破封时，接收方在 BREACH 侧通过**手机相机扫描 QR、上传 QR 图片、或粘贴 pepper 文本**来取回 pepper，再输入密码词。**丢失 QR／卡片则文件无法恢复** —— 请通过与密文不同的渠道发送 QR。仅限军规模式；ace 模式保持固定 pepper 和 `.txt` 密钥卡，v2/v3/v4 文件仍可正常破封。（QR 生成用 qrcode-generator，解码用 jsQR，均内联进页面以保持离线可用。）
 
 词数即模式：选中 MIL-SPEC 后，封印侧和破封侧都会渲染 12 段，接收方只要切到 MIL-SPEC，密码格自然就会要求正确的词数。配合 **⚄ 随机生成** 得到完整的约 155 位随机密钥，强度十分扎实。
 
@@ -252,7 +254,7 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 - **模式专属 pepper**：每个模式（六个 ace + MIL-SPEC）有自己的 pepper（密码混入串），加入到密码词中后再进行 PBKDF2，模式本身成为第二认证因素。
 - **并行封印**：批量上传时只推导一次 AES 密钥，所有文件用各自独立的 IV 并行加密，近似线性加速。
 - **并行破封**：加载 JSON 密文包时，接收端按 salt 分组（一组只跑一次 PBKDF2 —— 同批次封印的密文包通常只有一组），然后所有 AES-GCM 解密并行执行。
-- **数据包格式**：base64 编码。**v4**（军规模式）：`MAGIC(4) | 0x04 | 迭代次数(4，大端) | 校验词索引(2) | SALT(16) | IV(12) | 密文` —— 增加 2 字节校验词索引用于自动核对。**v3**（ace 模式）：`MAGIC(4) | 0x03 | 迭代次数(4) | SALT(16) | IV(12) | 密文` —— 迭代次数随包传递，任意强度都能直接破封。**v2**（`MAGIC | 0x02 | SALT | IV | 密文`，固定 31 万）仍可完整读取，旧密文继续可用。
+- **数据包格式**：base64 编码。**v5**（军规模式，当前）：字节布局与 v4 相同，但版本号 `0x05` 表示「pepper 是外部随机密钥」（保存在 QR 中，不在文件里）。**v4**（军规模式）：`MAGIC(4) | 0x04 | 迭代次数(4，大端) | 校验词索引(2) | SALT(16) | IV(12) | 密文` —— 增加 2 字节校验词索引用于自动核对。**v3**（ace 模式）：`MAGIC(4) | 0x03 | 迭代次数(4) | SALT(16) | IV(12) | 密文` —— 迭代次数随包传递，任意强度都能直接破封。**v2**（`MAGIC | 0x02 | SALT | IV | 密文`，固定 31 万）仍可完整读取，旧密文继续可用。
 - **密文包格式**：`[{"filename": "...", "cipher": "..."}, ...]` —— 单个密文条目的 JSON 数组。保存文件名为 `skystriker-bundle-<ISO 时间戳>-<N>files.json`。
 - **加解密过程零网络**。没有任何服务器请求，密码词不会离开你的浏览器。
 
