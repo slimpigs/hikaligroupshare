@@ -5232,12 +5232,29 @@ function megaA32ToBytes(a) {
   for (let i = 0; i < a.length; i++) { b[4*i]=(a[i]>>>24)&255; b[4*i+1]=(a[i]>>>16)&255; b[4*i+2]=(a[i]>>>8)&255; b[4*i+3]=a[i]&255; }
   return b;
 }
+// Heuristic: did we get an HTML page instead of a cipher? (e.g. a non-raw
+// GitHub/host link, a login wall, or a proxy error page.)
+function looksLikeHtml(s) {
+  const h = s.slice(0, 256).toLowerCase().replace(/^﻿/, '').trimStart();
+  return h.startsWith('<!doctype') || h.startsWith('<html') || h.startsWith('<?xml') ||
+    (h.startsWith('<') && /<(head|body|title|meta|div|script|!--)[\s>]/.test(h));
+}
 function parseMega(url) {
   let m = url.match(/mega(?:\.co)?\.nz\/file\/([0-9A-Za-z_-]+)#([0-9A-Za-z_-]+)/);
   if (m) return { id: m[1], key: m[2] };
   m = url.match(/mega(?:\.co)?\.nz\/#!([0-9A-Za-z_-]+)!([0-9A-Za-z_-]+)/);   // legacy link format
   if (m) return { id: m[1], key: m[2] };
   return null;
+}
+// Direct fetch with a precise per-step error. We do NOT route MEGA through a
+// CORS proxy: the proxy returns its own HTML error page, which would then be
+// "loaded" as if it were the cipher (the original mega-fetches-html bug).
+async function megaFetch(url, opts, label) {
+  try {
+    return await fetch(url, opts);
+  } catch (e) {
+    throw new Error(label + " couldn't be reached from the browser (CORS / Safari / network). Easiest fix: open the link in MEGA, download the .ssae.txt or .json, and drop it into the panel below.");
+  }
 }
 async function fetchMega({ id, key }) {
   const ka = megaBytesToA32(megaB64ToBytes(key));
@@ -5246,18 +5263,22 @@ async function fetchMega({ id, key }) {
   const aesKey = megaA32ToBytes([ka[0]^ka[4], ka[1]^ka[5], ka[2]^ka[6], ka[3]^ka[7]]);
   const nonce = megaA32ToBytes([ka[4], ka[5]]);
   // 1) ask MEGA for a download URL (no custom headers → simple request, no preflight)
-  const apiResp = await fetch('https://g.api.mega.co.nz/cs?id=' + (Math.random() * 1e9 | 0),
-    { method: 'POST', body: JSON.stringify([{ a: 'g', g: 1, p: id }]) });
-  const data = await apiResp.json();
+  setUrlStatus('MEGA · requesting download URL…', 'busy');
+  const apiResp = await megaFetch('https://g.api.mega.co.nz/cs?id=' + (Math.random() * 1e9 | 0),
+    { method: 'POST', body: JSON.stringify([{ a: 'g', g: 1, p: id }]) }, 'MEGA API');
+  let data;
+  try { data = await apiResp.json(); } catch { throw new Error('MEGA API gave a non-JSON reply (status ' + apiResp.status + ').'); }
   const r = Array.isArray(data) ? data[0] : data;
-  if (typeof r === 'number') throw new Error('MEGA API error ' + r + ' — link expired/removed or rate-limited.');
+  if (typeof r === 'number') throw new Error('MEGA API error ' + r + ' — link expired/removed, or rate-limited.');
   const dl = r && (typeof r.g === 'string' ? r.g : Array.isArray(r.g) ? r.g[0] : null);
-  if (!dl) throw new Error('MEGA returned no download URL (invalid link?).');
+  if (!dl) throw new Error('MEGA returned no download URL (invalid or folder link?).');
   // 2) download encrypted bytes
-  const dlResp = await fetch(dl);
-  if (!dlResp.ok) throw new Error('MEGA download failed: HTTP ' + dlResp.status);
+  setUrlStatus('MEGA · downloading encrypted file…', 'busy');
+  const dlResp = await megaFetch(dl, {}, 'MEGA storage node');
+  if (!dlResp.ok) throw new Error('MEGA download failed: HTTP ' + dlResp.status + '.');
   const enc = new Uint8Array(await dlResp.arrayBuffer());
   // 3) AES-128-CTR: IV = nonce(8) + zero(8); low 64 bits are the block counter.
+  setUrlStatus('MEGA · decrypting ' + enc.length.toLocaleString() + ' bytes…', 'busy');
   const counter = new Uint8Array(16); counter.set(nonce, 0);
   const ck = await crypto.subtle.importKey('raw', aesKey, { name: 'AES-CTR' }, false, ['decrypt']);
   return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-CTR', counter, length: 64 }, ck, enc));
@@ -5273,6 +5294,7 @@ async function fetchCipherFromUrl(rawInput) {
     const bytes = await fetchMega(mega);
     const text = new TextDecoder().decode(bytes).trim();
     if (!text) throw new Error('MEGA file decrypted to empty — wrong key in the link?');
+    if (looksLikeHtml(text)) throw new Error('MEGA returned an HTML page, not the file — the link may be wrong, or download the file and drop it below.');
     return { text, finalUrl: 'mega.nz/file/' + mega.id, rewrote: false, viaProxy: false,
              inflated: false, inflationRatio: 1, encoding: 'mega', wireBytes: bytes.length, decodedBytes: bytes.length };
   }
@@ -5355,6 +5377,7 @@ async function fetchCipherFromUrl(rawInput) {
   for (const c of chunks) { all.set(c, off); off += c.length; }
   const text = new TextDecoder().decode(all).trim();
   if (!text) throw new Error('Fetched body was empty.');
+  if (looksLikeHtml(text)) throw new Error('That URL returned an HTML page, not a cipher — use the RAW / direct file link (e.g. raw.githubusercontent.com), or download the file and drop it below.');
   const inflated = total > 0 && received > total * 1.02;
   const inflationRatio = inflated ? +(received / total).toFixed(2) : 1;
   return {
