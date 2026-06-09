@@ -2580,6 +2580,19 @@ textarea.input-cipher:focus { border-color: var(--red); }
   transition: width 0.18s ease;
   box-shadow: 0 0 10px var(--red);
 }
+/* Indeterminate "working" sweep for unknown-duration phases (Argon2id KDF, fetch).
+   Themed, visible in ALL modes — covers the silent MIL freeze where the CPU bay
+   animation is hidden. */
+.progress.indet { height: 7px; box-shadow: 0 0 16px var(--shadow-r); }
+.progress.indet .progress-fill {
+  width: 36%; transition: none;
+  background: linear-gradient(90deg, transparent, var(--red), var(--ember), var(--red), transparent);
+  animation: progSweep 1.05s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+@keyframes progSweep { 0% { transform: translateX(-120%); } 100% { transform: translateX(320%); } }
+/* Busy status gently pulses so a long fetch never looks frozen. */
+.url-status.busy { animation: busyPulse 1.15s ease-in-out infinite; }
+@keyframes busyPulse { 50% { opacity: 0.5; } }
 
 /* FOOTER */
 footer.transmit {
@@ -3477,7 +3490,9 @@ body[data-mode="decode"] .rail-pulse {
         <button class="btn ghost" id="btnSaveAll" data-i18n="btn.saveAll">Save All</button>
         <button class="btn ghost" id="btnCopyAll" data-i18n="btn.copyAll">Copy All as JSON</button>
         <button class="btn ghost" id="btnSaveAllJson" data-i18n="btn.saveAllJson">Save All as JSON</button>
+        <button class="btn ghost" id="btnPinBundle" data-i18n="btn.pinBundle">⬆ Pin Bundle to IPFS</button>
       </div>
+      <div id="bundlePinResult"></div>
     </div>
   </section>
 
@@ -3769,6 +3784,7 @@ const I18N = {
     'btn.saveAll':  'Save All',
     'btn.copyAll':  'Copy All as JSON',
     'btn.saveAllJson': 'Save All as JSON',
+    'btn.pinBundle':   '⬆ Pin Bundle to IPFS',
     'sec.remote':   'Remote Acquisition :: Pull from URL',
     'urlPh':        'paste an IPFS CID / ipfs:// / gateway link, a github raw / mega.nz link, or any direct cipher url…',
     'btn.fetch':    'Fetch',
@@ -3904,6 +3920,7 @@ const I18N = {
     'btn.saveAll':  '全部保存',
     'btn.copyAll':  '复制全部为 JSON',
     'btn.saveAllJson': '保存全部为 JSON',
+    'btn.pinBundle':   '⬆ 固定密文包到 IPFS',
     'sec.remote':   '远程获取 :: 从 URL 拉取',
     'urlPh':        '粘贴 IPFS CID / ipfs:// / 网关链接、github raw / mega.nz 链接，或任意直链…',
     'btn.fetch':    '获取',
@@ -5215,9 +5232,13 @@ $('#btnEncrypt').addEventListener('click', async () => {
     // MIL-SPEC: fresh RANDOM pepper + memory-hard Argon2id (v6). Ace modes use the
     // baked pepper + PBKDF2 (v3).
     const sealPepper = sealIsMil ? ensureMilPepper() : getCurrentPepper();
-    const key = sealIsMil
-      ? await deriveKeyArgon2(words, salt, sealPepper, ARGON_PARAMS)
-      : await deriveKey(words, salt, sealPepper, iterations);
+    progress.classList.add('indet');   // Argon2id KDF can be ~1-2s
+    let key;
+    try {
+      key = sealIsMil
+        ? await deriveKeyArgon2(words, salt, sealPepper, ARGON_PARAMS)
+        : await deriveKey(words, salt, sealPepper, iterations);
+    } finally { progress.classList.remove('indet'); }
     setProgress(progress, 35);
 
     // Flip rows to "working" before we kick off the parallel encrypts.
@@ -5416,6 +5437,32 @@ $('#btnSaveAllJson').addEventListener('click', () => {
   toast(t('toast.saving', ok.length), 'ok', 'save');
 });
 
+// Pin the WHOLE batch as one JSON bundle → a single CID. Recipient fetches that
+// CID and Breach All. (Same JSON format as Save/Copy All as JSON.)
+$('#btnPinBundle')?.addEventListener('click', async () => {
+  const ok = sealedPackets.filter(p => p.ok);
+  if (!ok.length) return toast(t('toast.nothingSave'), 'err', 'abort');
+  const btn = $('#btnPinBundle'); const oldT = btn.textContent;
+  btn.disabled = true; btn.textContent = '… pinning';
+  try {
+    const bundle = JSON.stringify(ok.map(p => ({ filename: p.filename, cipher: p.b64 })), null, 2);
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const cid = await pinToIpfs(bundle, `skystriker-bundle-${ts}-${ok.length}files.json`);
+    const url = IPFS_GATEWAYS[0] + cid;
+    const host = $('#bundlePinResult');
+    let link = host.querySelector('a');
+    if (!link) { link = makeEl('a', { cls: 'seal-ipfs', attrs: { href: '#' } }); host.appendChild(link); }
+    link.textContent = `⛓ bundle ▸ ${cid.slice(0, 14)}…  (copy link · ${ok.length} files)`;
+    link.href = url; link.title = url;
+    link.onclick = (e) => { e.preventDefault(); navigator.clipboard?.writeText(url); toast(t('toast.ipfsCopied'), 'ok', 'copy'); };
+    btn.textContent = '✓ pinned';
+    toast(t('toast.ipfsPinned', cid.slice(0, 12)), 'ok', 'fetch');
+  } catch (e) {
+    btn.textContent = oldT; btn.disabled = false;
+    toast(e.message || 'Pin failed.', 'err', 'abort');
+  }
+});
+
 $('#btnEncReset').addEventListener('click', () => {
   encFiles = [];
   encHandles = [];
@@ -5582,20 +5629,23 @@ function parseIpfs(input) {
   return null;
 }
 async function fetchIpfs(ipfs) {
-  let lastErr = 'no gateway responded';
-  for (let i = 0; i < IPFS_GATEWAYS.length; i++) {
-    const url = IPFS_GATEWAYS[i] + ipfs.cid + ipfs.path;
-    setUrlStatus('IPFS · gateway ' + (i + 1) + '/' + IPFS_GATEWAYS.length + '…', 'busy');
-    try {
-      const resp = await fetch(url, { redirect: 'follow', cache: 'no-store' });
-      if (!resp.ok) { lastErr = 'HTTP ' + resp.status; continue; }
-      const text = (await resp.text()).trim();
-      if (!text) { lastErr = 'empty'; continue; }
-      if (looksLikeHtml(text)) { lastErr = 'gateway returned a page'; continue; }
-      return { text, finalUrl: url };
-    } catch { lastErr = 'gateway blocked/slow'; continue; }
-  }
-  throw new Error('All IPFS gateways failed (' + lastErr + '). The CID may be unpinned or not yet propagated — wait a moment and retry.');
+  // RACE all gateways in parallel — the fastest valid response wins, so one slow
+  // gateway can't hold everything up. Losers are aborted once we have a winner.
+  setUrlStatus('IPFS · racing ' + IPFS_GATEWAYS.length + ' gateways…', 'busy');
+  const ctrls = IPFS_GATEWAYS.map(() => new AbortController());
+  const attempts = IPFS_GATEWAYS.map(async (gw, i) => {
+    const url = gw + ipfs.cid + ipfs.path;
+    const resp = await fetch(url, { redirect: 'follow', cache: 'no-store', signal: ctrls[i].signal });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const text = (await resp.text()).trim();
+    if (!text || looksLikeHtml(text)) throw new Error('not a cipher');
+    return { text, finalUrl: url, i };
+  });
+  let winner;
+  try { winner = await Promise.any(attempts); }
+  catch { throw new Error('All IPFS gateways failed — the CID may be unpinned or not yet propagated. Wait a moment and retry.'); }
+  ctrls.forEach((c, i) => { if (i !== winner.i) try { c.abort(); } catch {} });
+  return { text: winner.text, finalUrl: winner.finalUrl };
 }
 
 /* ====== IPFS PINNING (Pinata) ======
@@ -5863,6 +5913,8 @@ $('#btnFetchUrl').addEventListener('click', async () => {
   if (!raw) { setUrlStatus('paste a url first', 'err'); return; }
   const btn = $('#btnFetchUrl');
   btn.disabled = true;
+  const fbar = $('#decProgress');
+  fbar?.classList.remove('hidden'); fbar?.classList.add('indet');   // animated "working" while fetching
   try {
     const result = await fetchCipherFromUrl(raw);
     const { text, finalUrl, rewrote, viaProxy, inflated, inflationRatio, encoding, wireBytes, decodedBytes } = result;
@@ -5884,6 +5936,7 @@ $('#btnFetchUrl').addEventListener('click', async () => {
     toast(err.message || 'Fetch failed.', 'err', 'abort');
   } finally {
     btn.disabled = false;
+    fbar?.classList.remove('indet'); fbar?.classList.add('hidden');
   }
 });
 
@@ -5976,15 +6029,18 @@ $('#btnDecrypt').addEventListener('click', async () => {
     //   v2-v4 → PBKDF2 + the baked per-mode pepper (mode is the second factor)
     const currentTheme = document.documentElement.getAttribute('data-theme') || ACE_DEFAULT;
     let key;
-    if (version === VERSION6) {
-      if (!scannedPepper) throw new Error(t('toast.pepperNeeded'));
-      key = await deriveKeyArgon2(words, salt, scannedPepper, argon || ARGON_PARAMS);
-    } else if (version === VERSION5) {
-      if (!scannedPepper) throw new Error(t('toast.pepperNeeded'));
-      key = await deriveKey(words, salt, scannedPepper, iterations);
-    } else {
-      key = await deriveKey(words, salt, ACE_PEPPERS[currentTheme] || ACE_PEPPERS[ACE_DEFAULT], iterations);
-    }
+    progress.classList.add('indet');   // unknown-duration KDF (Argon2id can be ~1-2s)
+    try {
+      if (version === VERSION6) {
+        if (!scannedPepper) throw new Error(t('toast.pepperNeeded'));
+        key = await deriveKeyArgon2(words, salt, scannedPepper, argon || ARGON_PARAMS);
+      } else if (version === VERSION5) {
+        if (!scannedPepper) throw new Error(t('toast.pepperNeeded'));
+        key = await deriveKey(words, salt, scannedPepper, iterations);
+      } else {
+        key = await deriveKey(words, salt, ACE_PEPPERS[currentTheme] || ACE_PEPPERS[ACE_DEFAULT], iterations);
+      }
+    } finally { progress.classList.remove('indet'); }
     setProgress(progress, 60);
 
     let plainBuf;
@@ -6341,6 +6397,7 @@ $('#btnBreachAll').addEventListener('click', async () => {
   let derived = 0;
   const totalGroups = groups.size;
   const keyByGroup = new Map();
+  progress.classList.add('indet');   // Argon2id KDF can be ~1-2s
   await Promise.all([...groups.entries()].map(async ([gkey, items]) => {
     const p0 = items[0].parsed;
     const key = p0.version === VERSION6
@@ -6350,6 +6407,7 @@ $('#btnBreachAll').addEventListener('click', async () => {
     derived++;
     setProgress(progress, 15 + Math.floor((derived / totalGroups) * 25));
   }));
+  progress.classList.remove('indet');
   setProgress(progress, 45);
 
   // Phase 4: flip queued rows to breaching, then decrypt in parallel.
