@@ -340,6 +340,16 @@
 .url-qr { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 9px 0 2px; }
 .url-qr .uq-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em; color: var(--ash); text-transform: uppercase; }
 
+/* IPFS pin token bar + per-row gateway link — general (all modes, themed via vars). */
+.ipfs-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 4px 0 14px; }
+.ipfs-bar .ipfs-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.2em; color: var(--ash); text-transform: uppercase; white-space: nowrap; }
+.ipfs-bar #ipfsToken { flex: 1; min-width: 150px; background: var(--hull); border: 1px solid var(--strut); color: var(--bone); font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 7px 10px; outline: none; letter-spacing: 0.03em; }
+.ipfs-bar #ipfsToken:focus { border-color: var(--red); box-shadow: 0 0 8px var(--shadow-r); }
+.ipfs-bar .ipfs-help { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--red); text-decoration: none; letter-spacing: 0.08em; white-space: nowrap; }
+.ipfs-bar .ipfs-help:hover { text-decoration: underline; }
+.seal-ipfs { display: inline-block; margin-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--red); text-decoration: none; letter-spacing: 0.03em; cursor: pointer; }
+.seal-ipfs:hover { text-decoration: underline; text-shadow: 0 0 8px var(--shadow-r); }
+
 /* LINK ▸ QR utility — clean QR on a white card inside a themed reticle frame. */
 .qrtool-stage { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-top: 22px; }
 .qrtool-stage[aria-hidden="true"] { display: none; }
@@ -3451,6 +3461,17 @@ body[data-mode="decode"] .rail-pulse {
         <span data-i18n="sealed.label">// Sealed Transmissions</span>
         <span class="count" id="encOutCount">0 files</span>
       </div>
+      <!-- IPFS token: paste (or scan) your own Pinata JWT to enable ⬆ IPFS pinning.
+           Stays in this browser (localStorage); never hardcoded or shared. -->
+      <div class="ipfs-bar">
+        <span class="ipfs-label" data-i18n="ipfs.token">PINATA JWT</span>
+        <input type="password" id="ipfsToken" data-i18n-attr="placeholder:ipfs.ph" placeholder="paste your Pinata JWT to enable ⬆ IPFS" autocomplete="off" spellcheck="false">
+        <button class="forge-btn" id="btnIpfsScanCam" type="button" title="Scan token QR (camera)">📷</button>
+        <label class="forge-btn" for="ipfsScanImgInput" title="Scan token QR (image)">🖼</label>
+        <input type="file" id="ipfsScanImgInput" accept="image/*" hidden>
+        <a class="ipfs-help" href="https://app.pinata.cloud/developers/api-keys" target="_blank" rel="noopener" data-i18n="ipfs.get">get one ↗</a>
+      </div>
+      <div class="ms-cam" id="ipfsScanCam"><video id="ipfsScanVideo" playsinline muted></video></div>
       <div class="seal-list" id="encSealList"></div>
       <div class="btn-row" style="margin-top: 14px;">
         <button class="btn ghost" id="btnSaveAll" data-i18n="btn.saveAll">Save All</button>
@@ -3749,7 +3770,7 @@ const I18N = {
     'btn.copyAll':  'Copy All as JSON',
     'btn.saveAllJson': 'Save All as JSON',
     'sec.remote':   'Remote Acquisition :: Pull from URL',
-    'urlPh':        'paste a github raw / gist / mega.nz file link, or any direct cipher url…',
+    'urlPh':        'paste an IPFS CID / ipfs:// / gateway link, a github raw / mega.nz link, or any direct cipher url…',
     'btn.fetch':    'Fetch',
     'sec.intake':   'Cipher Intake :: Paste String or Upload File',
     'inputPh':      'paste the sealed transmission string here…',
@@ -3760,7 +3781,16 @@ const I18N = {
     'mini.copy':    'Copy',
     'mini.save':    'Save',
     'mini.replace': 'Replace',
+    'mini.ipfs':    '⬆ IPFS',
     'mini.replace.disabledTitle': 'Replace requires File System Access API (Chromium browsers only)',
+    'ipfs.token':   'PINATA JWT',
+    'ipfs.ph':      'paste your Pinata JWT to enable ⬆ IPFS pinning',
+    'ipfs.get':     'get one ↗',
+    'toast.ipfsNoToken':  'Paste (or scan) your Pinata JWT in the token field first.',
+    'toast.ipfsBadToken': 'Pinata rejected the token (401/403) — check or regenerate the JWT.',
+    'toast.ipfsPinned':   (c) => `Pinned to IPFS ✓ — CID ${c}… (link copied to the row)`,
+    'toast.ipfsCopied':   'IPFS gateway link copied.',
+    'toast.ipfsTokenScanned': 'Pinata token loaded from QR ✓',
     'lang.toggle':  '中文',
     'toast.locked':           (n) => `${n} target${n > 1 ? 's' : ''} locked.`,
     'toast.noFiles':          'No files loaded.',
@@ -3875,7 +3905,7 @@ const I18N = {
     'btn.copyAll':  '复制全部为 JSON',
     'btn.saveAllJson': '保存全部为 JSON',
     'sec.remote':   '远程获取 :: 从 URL 拉取',
-    'urlPh':        '粘贴 github raw / gist / mega.nz 文件链接，或任意直链…',
+    'urlPh':        '粘贴 IPFS CID / ipfs:// / 网关链接、github raw / mega.nz 链接，或任意直链…',
     'btn.fetch':    '获取',
     'sec.intake':   '密文接入 :: 粘贴字符串或上传文件',
     'inputPh':      '在此粘贴封印好的密文字符串…',
@@ -3886,6 +3916,15 @@ const I18N = {
     'mini.copy':    '复制',
     'mini.save':    '保存',
     'mini.replace': '替换',
+    'mini.ipfs':    '⬆ IPFS',
+    'ipfs.token':   'PINATA JWT',
+    'ipfs.ph':      '粘贴你的 Pinata JWT 以启用 ⬆ IPFS 固定',
+    'ipfs.get':     '获取 ↗',
+    'toast.ipfsNoToken':  '请先在令牌框粘贴（或扫描）你的 Pinata JWT。',
+    'toast.ipfsBadToken': 'Pinata 拒绝了该令牌（401/403）—— 请检查或重新生成 JWT。',
+    'toast.ipfsPinned':   (c) => `已固定到 IPFS ✓ —— CID ${c}…（链接已复制到该行）`,
+    'toast.ipfsCopied':   'IPFS 网关链接已复制。',
+    'toast.ipfsTokenScanned': '已从二维码载入 Pinata 令牌 ✓',
     'mini.replace.disabledTitle': '替换功能需要 File System Access API（仅 Chromium 内核浏览器）',
     'lang.toggle':  'EN',
     'toast.locked':           (n) => `已锁定 ${n} 个目标。`,
@@ -5238,9 +5277,12 @@ $('#btnEncrypt').addEventListener('click', async () => {
           replaceBtn.title = t('mini.replace.disabledTitle');
         }
         replaceBtn.addEventListener('click', () => replaceSealed(r, replaceBtn));
+        const ipfsBtn = makeEl('button', { cls: 'mini-btn', text: t('mini.ipfs') });
+        ipfsBtn.addEventListener('click', () => pinSealed(r, ipfsBtn, row));
         actions.appendChild(copyBtn);
         actions.appendChild(saveBtn);
         actions.appendChild(replaceBtn);
+        actions.appendChild(ipfsBtn);
       } else {
         setRowState(row, 'failed', 'failed');
         row.querySelector('.seal-stats').textContent = r.error;
@@ -5519,9 +5561,110 @@ async function fetchMega({ id, key }) {
   throw new Error('MEGA download failed (' + lastErr + '). Open the link in MEGA, download the file, and drop it below.');
 }
 
+/* ====== IPFS ======
+   IPFS gateways serve content-addressed files WITH CORS, so we fetch directly —
+   no proxy, no MEGA dance. Accepts a bare CID, an ipfs:// URI, or any gateway
+   URL; tries several gateways (they all serve the same bytes, so fallback is
+   safe and reliable, unlike fragile CORS proxies). */
+const IPFS_GATEWAYS = [
+  'https://dweb.link/ipfs/',
+  'https://ipfs.io/ipfs/',
+  'https://w3s.link/ipfs/',
+  'https://gateway.pinata.cloud/ipfs/',
+  'https://flk-ipfs.xyz/ipfs/',
+];
+function parseIpfs(input) {
+  const s = (input || '').trim();
+  let m;
+  if ((m = s.match(/^ipfs:\/\/([A-Za-z0-9]+)(\/[^\s?#]*)?/i))) return { cid: m[1], path: m[2] || '' };
+  if ((m = s.match(/\/ipfs\/([A-Za-z0-9]+)(\/[^\s?#]*)?/i))) return { cid: m[1], path: m[2] || '' };
+  if (/^(Qm[1-9A-HJ-NP-Za-km-z]{44}|ba[a-z2-7]{20,})$/.test(s)) return { cid: s, path: '' };
+  return null;
+}
+async function fetchIpfs(ipfs) {
+  let lastErr = 'no gateway responded';
+  for (let i = 0; i < IPFS_GATEWAYS.length; i++) {
+    const url = IPFS_GATEWAYS[i] + ipfs.cid + ipfs.path;
+    setUrlStatus('IPFS · gateway ' + (i + 1) + '/' + IPFS_GATEWAYS.length + '…', 'busy');
+    try {
+      const resp = await fetch(url, { redirect: 'follow', cache: 'no-store' });
+      if (!resp.ok) { lastErr = 'HTTP ' + resp.status; continue; }
+      const text = (await resp.text()).trim();
+      if (!text) { lastErr = 'empty'; continue; }
+      if (looksLikeHtml(text)) { lastErr = 'gateway returned a page'; continue; }
+      return { text, finalUrl: url };
+    } catch { lastErr = 'gateway blocked/slow'; continue; }
+  }
+  throw new Error('All IPFS gateways failed (' + lastErr + '). The CID may be unpinned or not yet propagated — wait a moment and retry.');
+}
+
+/* ====== IPFS PINNING (Pinata) ======
+   Pins a sealed ciphertext to IPFS using the user's OWN Pinata JWT — entered or
+   scanned locally, stored only in this browser (localStorage), never hardcoded.
+   Pinata's API reflects our origin + allows the auth header, so the browser can
+   POST directly. The pinned file is then pullable from any gateway with CORS. */
+function ipfsToken() { return ($('#ipfsToken')?.value || localStorage.getItem('pinata-jwt') || '').trim(); }
+function setIpfsToken(v) {
+  v = (v || '').trim();
+  const inp = $('#ipfsToken'); if (inp) inp.value = v;
+  try { localStorage.setItem('pinata-jwt', v); } catch {}
+}
+async function pinToIpfs(b64, filename) {
+  const jwt = ipfsToken();
+  if (!jwt) throw new Error(t('toast.ipfsNoToken'));
+  const fd = new FormData();
+  fd.append('file', new Blob([b64], { type: 'text/plain' }), filename || 'transmission.ssae.txt');
+  fd.append('pinataMetadata', JSON.stringify({ name: filename || 'skystriker.ssae.txt' }));
+  const resp = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS',
+    { method: 'POST', headers: { Authorization: 'Bearer ' + jwt }, body: fd });
+  if (resp.status === 401 || resp.status === 403) throw new Error(t('toast.ipfsBadToken'));
+  if (!resp.ok) throw new Error('Pinata error ' + resp.status + '.');
+  const j = await resp.json();
+  if (!j.IpfsHash) throw new Error('Pinata returned no CID.');
+  return j.IpfsHash;
+}
+async function pinSealed(r, btn, row) {
+  const old = btn.textContent;
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    const cid = await pinToIpfs(r.b64, r.filename + '.ssae.txt');
+    const url = IPFS_GATEWAYS[0] + cid;
+    let link = row.querySelector('.seal-ipfs');
+    if (!link) { link = makeEl('a', { cls: 'seal-ipfs', attrs: { href: '#' } }); row.querySelector('.seal-info').appendChild(link); }
+    link.textContent = '⛓ ipfs ▸ ' + cid.slice(0, 12) + '…  (copy link)';
+    link.href = url; link.title = url;
+    link.onclick = (e) => { e.preventDefault(); navigator.clipboard?.writeText(url); toast(t('toast.ipfsCopied'), 'ok', 'copy'); };
+    btn.textContent = '✓ ipfs';
+    toast(t('toast.ipfsPinned', cid.slice(0, 12)), 'ok', 'fetch');
+  } catch (e) {
+    btn.textContent = old; btn.disabled = false;
+    toast(e.message || 'Pin failed.', 'err', 'abort');
+  }
+}
+(function initIpfsToken() {
+  const inp = $('#ipfsToken'); if (!inp) return;
+  try { inp.value = localStorage.getItem('pinata-jwt') || ''; } catch {}
+  inp.addEventListener('input', () => setIpfsToken(inp.value));
+})();
+$('#btnIpfsScanCam')?.addEventListener('click', () => startQrCamera('#ipfsScanVideo', '#ipfsScanCam',
+  (text) => { setIpfsToken(text); toast(t('toast.ipfsTokenScanned'), 'ok', 'extracted'); return true; }));
+$('#ipfsScanImgInput')?.addEventListener('change', (e) => {
+  const f = e.target.files?.[0];
+  if (f) scanQrImage(f, (text) => { setIpfsToken(text); toast(t('toast.ipfsTokenScanned'), 'ok', 'extracted'); });
+  e.target.value = '';
+});
+
 async function fetchCipherFromUrl(rawInput) {
-  // MEGA links need their own protocol + client-side decrypt (see fetchMega).
   const trimmed = rawInput.trim();
+  // IPFS: bare CID, ipfs:// URI, or a gateway URL — fetched directly (CORS), no proxy.
+  const ipfs = parseIpfs(trimmed);
+  if (ipfs) {
+    setUrlStatus('IPFS — pulling from gateways…', 'busy');
+    const { text, finalUrl } = await fetchIpfs(ipfs);
+    return { text, finalUrl, rewrote: false, viaProxy: false, inflated: false,
+             inflationRatio: 1, encoding: 'ipfs', wireBytes: text.length, decodedBytes: text.length };
+  }
+  // MEGA links need their own protocol + client-side decrypt (see fetchMega).
   if (/mega(?:\.co)?\.nz\//i.test(trimmed)) {
     const mega = parseMega(trimmed);
     if (!mega) throw new Error("Only MEGA *file* links work (mega.nz/file/ID#KEY). Folder links aren't supported — open the folder and copy the file's own link.");
