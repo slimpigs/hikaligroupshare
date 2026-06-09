@@ -3446,8 +3446,6 @@ body[data-mode="decode"] .rail-pulse {
     <div class="url-qr">
       <span class="uq-label" data-i18n="urlqr.label">or scan a QR of the link/cipher:</span>
       <button class="forge-btn" id="btnUrlScanCam" type="button">📷 <span data-i18n="scan.cam">CAMERA</span></button>
-      <label class="forge-btn" for="urlScanImgInput">🖼 <span data-i18n="scan.img">IMAGE</span></label>
-      <input type="file" id="urlScanImgInput" accept="image/*" hidden>
     </div>
     <div class="ms-cam" id="urlScanCam"><video id="urlScanVideo" playsinline muted></video></div>
     <div class="url-status" id="urlStatus"></div>
@@ -4649,7 +4647,6 @@ function handleFetchQr(text) {
   return true;
 }
 $('#btnUrlScanCam')?.addEventListener('click', () => startQrCamera('#urlScanVideo', '#urlScanCam', handleFetchQr));
-$('#urlScanImgInput')?.addEventListener('change', (e) => { const f = e.target.files?.[0]; if (f) scanQrImage(f, handleFetchQr); e.target.value = ''; });
 
 
 function readCipherWords(container) {
