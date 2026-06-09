@@ -48,7 +48,7 @@ The cipher lock is rebuilt as a **12-segment KEY MATRIX** — a 4×3 keypad with
 What it actually changes under the hood:
 
 - **12-word cipher instead of 6.** A full MIL-SPEC key carries **≈ 155 bits** of entropy (vs. ≈ 78 for a 6-word ace key) — the EFF large diceware list at ~12.9 bits/word, twelve segments deep.
-- **PBKDF2 is hardened from 310,000 → 1,000,000 iterations** — far slower to brute-force a weak passphrase.
+- **Key derivation is upgraded to Argon2id (memory-hard)** — 64 MB · t=3 · p=1, instead of PBKDF2. PBKDF2 is cheap to attack on GPUs/ASICs; Argon2id forces each guess to allocate and churn 64 MB of RAM, which destroys that parallelism. (Runs in-browser via a vendored WASM build; ~1–2 s on a phone, hidden by the boot animation.)
 - **Its own pepper**, exactly like the ace modes — a MIL-SPEC packet can ONLY be breached in MIL-SPEC mode.
 - The iteration count is **written into the packet (v3 format)**, so the recipient just selects MIL-SPEC and breaches — no extra coordination needed beyond the mode + the **12 words**.
 - **Checkword auto-verify:** a single word derived from your *full* entered key. **MIL-SPEC packets embed it (v4 format)**, so the recipient doesn't have to check anything by hand — when they load the file and type the words, the app **auto-verifies**: a green **"✓ verified"** with an active pulse the instant they match, or a precise **"✗ typo — file expects ‹word›"** instead of a cryptic "breach failed." It's still shown on the seal side and on the key card too. The checkword is ~13 bits and is **never mixed into the AES key**; embedding it costs ~13 bits of the ~155-bit MIL key (negligible). Backward-compatible: ace packets stay v3.
@@ -112,14 +112,14 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 ## Technical details
 
 - **Cipher:** AES-256-GCM (authenticated encryption — tampering is detected)
-- **Key derivation:** PBKDF2 / SHA-256 — **310,000** iterations (standard ace modes) or **1,000,000** (MIL-SPEC)
+- **Key derivation:** **Argon2id** — 64 MB, t=3, p=1 (MIL-SPEC, memory-hard, via vendored hash-wasm) · **PBKDF2 / SHA-256** 310,000 iterations (ace modes). Older MIL files (v4/v5) used PBKDF2 1,000,000 and still breach.
 - **Random key generation:** EFF large diceware wordlist (7,776 words), picked with `crypto.getRandomValues` + rejection sampling → ≈ 12.9 bits/word — **≈ 78 bits for a 6-word ace key, ≈ 155 bits for a 12-word MIL-SPEC key**
 - **Word count is mode-bound:** ace modes use a 6-slot grid; MIL-SPEC renders a 12-segment key matrix on both seal and breach sides, with a live entropy/clearance meter (INSUFFICIENT → GUARDED → HARDENED → BLACKSITE)
 - **Salt / IV:** randomly generated per encryption (16 / 12 bytes)
 - **Per-mode pepper:** each mode (six aces + MIL-SPEC) has its own secret pepper baked into the page and appended to the password before PBKDF2. The mode therefore acts as a second factor.
 - **Parallel sealing:** multi-file batches derive the AES key once and encrypt all files in parallel with unique IVs, giving near-linear speedup.
 - **Parallel breaching:** when a JSON bundle is loaded, the receiver groups ciphers by salt (one PBKDF2 per unique salt — usually just one for a same-batch bundle), then runs all AES-GCM decrypts in parallel.
-- **Packet format:** base64-encoded. **v5** (MIL-SPEC, current): same bytes as v4 but version `0x05` flags "pepper is an external random secret" (carried in the QR, not in the file). **v4** (MIL-SPEC): `MAGIC(4) | 0x04 | ITERATIONS(4, big-endian) | CHECKWORD-INDEX(2) | SALT(16) | IV(12) | CIPHERTEXT` — adds the 2-byte checkword index for auto-verify. **v3** (ace modes): `MAGIC(4) | 0x03 | ITERATIONS(4) | SALT(16) | IV(12) | CIPHERTEXT` — the KDF iteration count travels in the packet so any strength breaches without extra coordination. **v2** (`MAGIC | 0x02 | SALT | IV | CIPHERTEXT`, fixed 310K) is still fully readable, so older sealed files keep working.
+- **Packet format:** base64-encoded. **v6** (MIL-SPEC, current): `MAGIC(4) | 0x06 | ARGON-MEM-KB(4) | ARGON-TCOST(1) | ARGON-PARALLEL(1) | CHECKWORD-INDEX(2) | SALT(16) | IV(12) | CIPHERTEXT` — Argon2id params travel in the packet + external random pepper. **v5** (MIL-SPEC, PBKDF2): same bytes as v4 but version `0x05` flags "pepper is an external random secret" (carried in the QR, not in the file). **v4** (MIL-SPEC): `MAGIC(4) | 0x04 | ITERATIONS(4, big-endian) | CHECKWORD-INDEX(2) | SALT(16) | IV(12) | CIPHERTEXT` — adds the 2-byte checkword index for auto-verify. **v3** (ace modes): `MAGIC(4) | 0x03 | ITERATIONS(4) | SALT(16) | IV(12) | CIPHERTEXT` — the KDF iteration count travels in the packet so any strength breaches without extra coordination. **v2** (`MAGIC | 0x02 | SALT | IV | CIPHERTEXT`, fixed 310K) is still fully readable, so older sealed files keep working.
 - **Bundle format:** `[{"filename": "...", "cipher": "..."}, ...]` — a plain JSON array of single-cipher entries. Saved as `skystriker-bundle-<ISO-timestamp>-<N>files.json`.
 - **MEGA links:** the **Fetch** field accepts `mega.nz/file/ID#KEY` links. A MEGA link can't be plain-fetched (it returns the web-app HTML; the file is AES-encrypted with the key in the URL `#fragment`), so the page speaks MEGA's API, downloads the encrypted bytes, and **AES-128-CTR-decrypts them in your browser** — then runs the normal breach. The encrypted download tries MEGA directly, then through raw-byte CORS relays if the node blocks cross-origin (the relay only ever sees the *encrypted* bytes; the key stays in the fragment). Anonymous file links only; folder links aren't supported. (Public relays cap large files — those fall back to download + drop.)
 - **Scan a link/cipher QR:** under **Fetch** there's a 📷 **CAMERA** / 🖼 **IMAGE** pair (all modes). Point the camera at — or upload an image of — a QR that contains a share link (e.g. a MEGA link) and it drops into the field and fetches; a QR of the cipher itself loads directly.
@@ -186,7 +186,7 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 底层实际变化：
 
 - **12 个词，而非 6 个。** 一把完整的军规模式密钥承载 **约 155 位**熵（6 词 ace 密钥约 78 位）—— EFF 大词表每词约 12.9 位，十二段累计。
-- **PBKDF2 从 310,000 轮提升到 1,000,000 轮** —— 弱口令被暴力破解会慢得多。
+- **密钥推导升级为 Argon2id（内存硬）** —— 64 MB · t=3 · p=1，取代 PBKDF2。PBKDF2 在 GPU／ASIC 上很容易并行爆破；Argon2id 让每次猜测都要分配并搅动 64 MB 内存，摧毁这种并行优势。（通过内联的 WASM 在浏览器内运行，手机上约 1–2 秒，被启动动画掩盖。）
 - **拥有独立 pepper**，和各 ace 模式一样 —— 军规模式封的包只能在军规模式下破封。
 - 迭代次数**写入数据包（v3 格式）**，接收方只需选中 MIL-SPEC 即可破封，除模式 + **12 词**外无需额外协调。
 - **校验词自动核对：** 一个由你*完整*密钥推导出的单词。**军规模式数据包会把它写入文件（v4 格式）**，所以接收方无需手动核对 —— 载入文件并输入密码词后，程序会**自动校验**：一致时立刻显示绿色 **"✓ 已核对"** 并伴随脉冲特效，打错时则给出精确提示 **"✗ 可能打错？文件要求‹某词›"**，而不是一句模糊的"破封失败"。封印侧和密钥卡上同样会显示。校验词约 13 位，**绝不混入 AES 密钥**；写入文件只占约 155 位军规密钥中的约 13 位（可忽略）。向后兼容：ace 数据包仍为 v3。
@@ -250,14 +250,14 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 ## 技术细节
 
 - **加密算法**：AES-256-GCM（带完整性校验，篡改会被发现）
-- **密钥推导**：PBKDF2 / SHA-256 —— **31 万**次迭代（标准 ace 模式）或 **100 万**次（MIL-SPEC）
+- **密钥推导**：**Argon2id** —— 64 MB、t=3、p=1（MIL-SPEC，内存硬，使用内联 hash-wasm）· **PBKDF2 / SHA-256** 31 万次迭代（ace 模式）。旧版 MIL 文件（v4/v5）用 PBKDF2 100 万次，仍可破封。
 - **随机密钥生成**：EFF 大词表（7,776 词），`crypto.getRandomValues` + 拒绝采样 → 每词约 12.9 位 —— **6 词 ace 密钥约 78 位，12 词 MIL-SPEC 密钥约 155 位**
 - **词数与模式绑定**：ace 模式用 6 格密码格；MIL-SPEC 在封印侧与破封侧都渲染 12 段密钥矩阵，并带一条实时熵 / 密级强度条（强度不足 → 基本 → 加固 → 最高机密）
 - **Salt 与 IV**：每次加密随机生成（16 / 12 字节）
 - **模式专属 pepper**：每个模式（六个 ace + MIL-SPEC）有自己的 pepper（密码混入串），加入到密码词中后再进行 PBKDF2，模式本身成为第二认证因素。
 - **并行封印**：批量上传时只推导一次 AES 密钥，所有文件用各自独立的 IV 并行加密，近似线性加速。
 - **并行破封**：加载 JSON 密文包时，接收端按 salt 分组（一组只跑一次 PBKDF2 —— 同批次封印的密文包通常只有一组），然后所有 AES-GCM 解密并行执行。
-- **数据包格式**：base64 编码。**v5**（军规模式，当前）：字节布局与 v4 相同，但版本号 `0x05` 表示「pepper 是外部随机密钥」（保存在 QR 中，不在文件里）。**v4**（军规模式）：`MAGIC(4) | 0x04 | 迭代次数(4，大端) | 校验词索引(2) | SALT(16) | IV(12) | 密文` —— 增加 2 字节校验词索引用于自动核对。**v3**（ace 模式）：`MAGIC(4) | 0x03 | 迭代次数(4) | SALT(16) | IV(12) | 密文` —— 迭代次数随包传递，任意强度都能直接破封。**v2**（`MAGIC | 0x02 | SALT | IV | 密文`，固定 31 万）仍可完整读取，旧密文继续可用。
+- **数据包格式**：base64 编码。**v6**（军规模式，当前）：`MAGIC(4) | 0x06 | Argon内存KB(4) | Argon轮数(1) | Argon并行(1) | 校验词索引(2) | SALT(16) | IV(12) | 密文` —— Argon2id 参数随包传递 + 外部随机 pepper。**v5**（军规模式，PBKDF2）：字节布局与 v4 相同，但版本号 `0x05` 表示「pepper 是外部随机密钥」（保存在 QR 中，不在文件里）。**v4**（军规模式）：`MAGIC(4) | 0x04 | 迭代次数(4，大端) | 校验词索引(2) | SALT(16) | IV(12) | 密文` —— 增加 2 字节校验词索引用于自动核对。**v3**（ace 模式）：`MAGIC(4) | 0x03 | 迭代次数(4) | SALT(16) | IV(12) | 密文` —— 迭代次数随包传递，任意强度都能直接破封。**v2**（`MAGIC | 0x02 | SALT | IV | 密文`，固定 31 万）仍可完整读取，旧密文继续可用。
 - **密文包格式**：`[{"filename": "...", "cipher": "..."}, ...]` —— 单个密文条目的 JSON 数组。保存文件名为 `skystriker-bundle-<ISO 时间戳>-<N>files.json`。
 - **MEGA 链接：** **Fetch** 输入框支持 `mega.nz/file/ID#KEY` 链接。MEGA 链接无法直接 fetch（返回的是网页 HTML，文件用 AES 加密、密钥在 URL 的 `#fragment` 里），所以页面会调用 MEGA API、下载加密字节，并在**浏览器内用 AES-128-CTR 解密**，再进行常规破封。加密文件的下载会先直连 MEGA，若节点不允许跨域则改走原始字节 CORS 中继（中继只看到*加密*字节，密钥始终留在 fragment 里）。仅支持匿名文件链接，不支持文件夹链接。（公共中继对大文件有大小限制 —— 超出时回退到下载并拖入。）
 - **扫描链接／密文二维码：** **Fetch** 下方有一对 📷 **相机** / 🖼 **图片** 按钮（所有模式）。对准、或上传一张含有分享链接（如 MEGA 链接）的二维码图片，即可自动填入并取回；密文本身的二维码则直接载入。
