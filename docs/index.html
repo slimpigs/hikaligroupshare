@@ -5246,42 +5246,63 @@ function parseMega(url) {
   if (m) return { id: m[1], key: m[2] };
   return null;
 }
-// Direct fetch with a precise per-step error. We do NOT route MEGA through a
-// CORS proxy: the proxy returns its own HTML error page, which would then be
-// "loaded" as if it were the cipher (the original mega-fetches-html bug).
-async function megaFetch(url, opts, label) {
-  try {
-    return await fetch(url, opts);
-  } catch (e) {
-    throw new Error(label + " couldn't be reached from the browser (CORS / Safari / network). Easiest fix: open the link in MEGA, download the .ssae.txt or .json, and drop it into the panel below.");
-  }
+// A sealed file decrypts to base64 starting with "U1NB" (= "SSAE" magic) for a
+// single cipher, or "[" for a JSON bundle. This lets us tell a real decrypt from
+// a proxy/error page (which decrypts to garbage) — so we can race download routes.
+function looksLikeCipher(text) {
+  const t = text.replace(/^﻿/, '').trimStart();
+  return t.startsWith('U1NB') || t.startsWith('[');
 }
+// The encrypted MEGA file is downloaded GET-style. We try the node directly
+// (works where it sends CORS), then through raw-byte CORS relays. The relay
+// only ever sees the ENCRYPTED bytes — the AES key lives in the URL #fragment,
+// used here in the browser, never sent anywhere. Each route is validated after
+// decrypt, so a relay that returns an error page is simply skipped.
+const MEGA_DL_ROUTES = [
+  (u) => u,
+  (u) => 'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(u),
+  (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+];
 async function fetchMega({ id, key }) {
   const ka = megaBytesToA32(megaB64ToBytes(key));
   if (ka.length < 8) throw new Error('Bad MEGA key in the link.');
   // File key = first 4 words XOR last 4; nonce = words 4..5.
   const aesKey = megaA32ToBytes([ka[0]^ka[4], ka[1]^ka[5], ka[2]^ka[6], ka[3]^ka[7]]);
   const nonce = megaA32ToBytes([ka[4], ka[5]]);
-  // 1) ask MEGA for a download URL (no custom headers → simple request, no preflight)
+  // 1) ask MEGA's API for the download URL (simple POST → no preflight; CORS: *)
   setUrlStatus('MEGA · requesting download URL…', 'busy');
-  const apiResp = await megaFetch('https://g.api.mega.co.nz/cs?id=' + (Math.random() * 1e9 | 0),
-    { method: 'POST', body: JSON.stringify([{ a: 'g', g: 1, p: id }]) }, 'MEGA API');
+  let apiResp;
+  try {
+    apiResp = await fetch('https://g.api.mega.co.nz/cs?id=' + (Math.random() * 1e9 | 0),
+      { method: 'POST', body: JSON.stringify([{ a: 'g', g: 1, p: id }]) });
+  } catch { throw new Error("MEGA API couldn't be reached (network/VPN). Download the file from MEGA and drop it below."); }
   let data;
-  try { data = await apiResp.json(); } catch { throw new Error('MEGA API gave a non-JSON reply (status ' + apiResp.status + ').'); }
+  try { data = await apiResp.json(); } catch { throw new Error('MEGA API gave a non-JSON reply.'); }
   const r = Array.isArray(data) ? data[0] : data;
   if (typeof r === 'number') throw new Error('MEGA API error ' + r + ' — link expired/removed, or rate-limited.');
   const dl = r && (typeof r.g === 'string' ? r.g : Array.isArray(r.g) ? r.g[0] : null);
   if (!dl) throw new Error('MEGA returned no download URL (invalid or folder link?).');
-  // 2) download encrypted bytes
-  setUrlStatus('MEGA · downloading encrypted file…', 'busy');
-  const dlResp = await megaFetch(dl, {}, 'MEGA storage node');
-  if (!dlResp.ok) throw new Error('MEGA download failed: HTTP ' + dlResp.status + '.');
-  const enc = new Uint8Array(await dlResp.arrayBuffer());
-  // 3) AES-128-CTR: IV = nonce(8) + zero(8); low 64 bits are the block counter.
-  setUrlStatus('MEGA · decrypting ' + enc.length.toLocaleString() + ' bytes…', 'busy');
+  // 2) download the encrypted bytes via the first route that yields a real file
   const counter = new Uint8Array(16); counter.set(nonce, 0);
   const ck = await crypto.subtle.importKey('raw', aesKey, { name: 'AES-CTR' }, false, ['decrypt']);
-  return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-CTR', counter, length: 64 }, ck, enc));
+  let lastErr = 'no route worked';
+  for (let i = 0; i < MEGA_DL_ROUTES.length; i++) {
+    setUrlStatus('MEGA · downloading' + (i ? ' (relay ' + i + ')' : '') + '…', 'busy');
+    let enc;
+    try {
+      const resp = await fetch(MEGA_DL_ROUTES[i](dl));
+      if (!resp.ok) { lastErr = 'HTTP ' + resp.status; continue; }
+      enc = new Uint8Array(await resp.arrayBuffer());
+    } catch { lastErr = 'route blocked'; continue; }
+    if (enc.length < 4) { lastErr = 'empty body'; continue; }
+    setUrlStatus('MEGA · decrypting ' + enc.length.toLocaleString() + ' bytes…', 'busy');
+    let text;
+    try { text = new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-CTR', counter, length: 64 }, ck, enc)).trim(); }
+    catch { lastErr = 'decrypt failed'; continue; }
+    if (looksLikeCipher(text)) return text;     // ← validated real cipher
+    lastErr = looksLikeHtml(text) ? 'relay returned a web page' : 'not a cipher (wrong key?)';
+  }
+  throw new Error('MEGA download failed (' + lastErr + '). Open the link in MEGA, download the file, and drop it below.');
 }
 
 async function fetchCipherFromUrl(rawInput) {
@@ -5291,12 +5312,9 @@ async function fetchCipherFromUrl(rawInput) {
     const mega = parseMega(trimmed);
     if (!mega) throw new Error("Only MEGA *file* links work (mega.nz/file/ID#KEY). Folder links aren't supported — open the folder and copy the file's own link.");
     setUrlStatus('MEGA link — fetching + decrypting client-side…', 'busy');
-    const bytes = await fetchMega(mega);
-    const text = new TextDecoder().decode(bytes).trim();
-    if (!text) throw new Error('MEGA file decrypted to empty — wrong key in the link?');
-    if (looksLikeHtml(text)) throw new Error('MEGA returned an HTML page, not the file — the link may be wrong, or download the file and drop it below.');
+    const text = await fetchMega(mega);   // already downloaded, decrypted, and validated
     return { text, finalUrl: 'mega.nz/file/' + mega.id, rewrote: false, viaProxy: false,
-             inflated: false, inflationRatio: 1, encoding: 'mega', wireBytes: bytes.length, decodedBytes: bytes.length };
+             inflated: false, inflationRatio: 1, encoding: 'mega', wireBytes: text.length, decodedBytes: text.length };
   }
   const final = normalizeFetchUrl(rawInput);
   const rewrote = final !== rawInput.trim();
