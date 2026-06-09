@@ -349,6 +349,8 @@
 .ipfs-bar .ipfs-help:hover { text-decoration: underline; }
 .seal-ipfs { display: inline-block; margin-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--red); text-decoration: none; letter-spacing: 0.03em; cursor: pointer; }
 .seal-ipfs:hover { text-decoration: underline; text-shadow: 0 0 8px var(--shadow-r); }
+.link-qr { display: block; margin-top: 8px; image-rendering: pixelated; border: 1px solid var(--red-deep); padding: 5px; background: var(--void); box-shadow: 0 0 14px var(--shadow-r); }
+#bundlePinResult { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin-top: 12px; }
 
 /* LINK ▸ QR utility — clean QR on a white card inside a themed reticle frame. */
 .qrtool-stage { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-top: 22px; }
@@ -2590,6 +2592,14 @@ textarea.input-cipher:focus { border-color: var(--red); }
   animation: progSweep 1.05s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
 }
 @keyframes progSweep { 0% { transform: translateX(-120%); } 100% { transform: translateX(320%); } }
+/* Pinning button: pulsing glow + an animated ellipsis so the upload reads as live. */
+.pinning { animation: pinPulse 0.85s ease-in-out infinite; position: relative; }
+@keyframes pinPulse { 50% { opacity: 0.55; box-shadow: 0 0 16px var(--shadow-r); } }
+.pinning::after { content: '⠋'; display: inline-block; margin-left: 5px; animation: pinSpin 0.7s steps(8) infinite; }
+@keyframes pinSpin {
+  0%{content:'⠋'} 12%{content:'⠙'} 25%{content:'⠹'} 37%{content:'⠸'}
+  50%{content:'⠼'} 62%{content:'⠴'} 75%{content:'⠦'} 87%{content:'⠇'}
+}
 /* Busy status gently pulses so a long fetch never looks frozen. */
 .url-status.busy { animation: busyPulse 1.15s ease-in-out infinite; }
 @keyframes busyPulse { 50% { opacity: 0.5; } }
@@ -4637,6 +4647,17 @@ function themedQrInk() {
     bg:  (cs.getPropertyValue('--void').trim() || '#02160b'),
   };
 }
+// Draw a themed QR of a link into hostEl (reused on re-pin). Used to auto-show a
+// scannable code for IPFS gateway links right after pinning.
+function renderLinkQr(hostEl, text, px) {
+  if (!hostEl) return;
+  let cv = hostEl.querySelector('canvas.link-qr');
+  if (!cv) { cv = makeEl('canvas', { cls: 'link-qr' }); hostEl.appendChild(cv); }
+  const { ink, bg } = themedQrInk();
+  drawQrCanvas(cv, text, 4, 3, ink, bg);
+  cv.style.width = (px || 120) + 'px';
+  cv.style.height = (px || 120) + 'px';
+}
 
 /* --- minimal single-page PDF: ASCII text + filled rects, no library --- */
 function escapePdf(s) { return String(s).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)'); }
@@ -5443,7 +5464,8 @@ $('#btnPinBundle')?.addEventListener('click', async () => {
   const ok = sealedPackets.filter(p => p.ok);
   if (!ok.length) return toast(t('toast.nothingSave'), 'err', 'abort');
   const btn = $('#btnPinBundle'); const oldT = btn.textContent;
-  btn.disabled = true; btn.textContent = '… pinning';
+  btn.disabled = true; btn.textContent = 'pinning'; btn.classList.add('pinning');
+  const pbar = $('#encProgress'); pbar?.classList.remove('hidden'); pbar?.classList.add('indet');
   try {
     const bundle = JSON.stringify(ok.map(p => ({ filename: p.filename, cipher: p.b64 })), null, 2);
     const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
@@ -5455,11 +5477,15 @@ $('#btnPinBundle')?.addEventListener('click', async () => {
     link.textContent = `⛓ bundle ▸ ${cid.slice(0, 14)}…  (copy link · ${ok.length} files)`;
     link.href = url; link.title = url;
     link.onclick = (e) => { e.preventDefault(); navigator.clipboard?.writeText(url); toast(t('toast.ipfsCopied'), 'ok', 'copy'); };
+    renderLinkQr(host, url, 150);   // auto QR for the bundle link (the main share artifact)
     btn.textContent = '✓ pinned';
     toast(t('toast.ipfsPinned', cid.slice(0, 12)), 'ok', 'fetch');
   } catch (e) {
     btn.textContent = oldT; btn.disabled = false;
     toast(e.message || 'Pin failed.', 'err', 'abort');
+  } finally {
+    btn.classList.remove('pinning');
+    pbar?.classList.remove('indet'); pbar?.classList.add('hidden');
   }
 });
 
@@ -5675,7 +5701,8 @@ async function pinToIpfs(b64, filename) {
 }
 async function pinSealed(r, btn, row) {
   const old = btn.textContent;
-  btn.disabled = true; btn.textContent = '…';
+  btn.disabled = true; btn.textContent = 'pinning'; btn.classList.add('pinning');
+  const pbar = $('#encProgress'); pbar?.classList.remove('hidden'); pbar?.classList.add('indet');
   try {
     const cid = await pinToIpfs(r.b64, r.filename + '.ssae.txt');
     const url = IPFS_GATEWAYS[0] + cid;
@@ -5684,11 +5711,15 @@ async function pinSealed(r, btn, row) {
     link.textContent = '⛓ ipfs ▸ ' + cid.slice(0, 12) + '…  (copy link)';
     link.href = url; link.title = url;
     link.onclick = (e) => { e.preventDefault(); navigator.clipboard?.writeText(url); toast(t('toast.ipfsCopied'), 'ok', 'copy'); };
+    renderLinkQr(row.querySelector('.seal-info'), url, 96);   // auto QR for the link
     btn.textContent = '✓ ipfs';
     toast(t('toast.ipfsPinned', cid.slice(0, 12)), 'ok', 'fetch');
   } catch (e) {
     btn.textContent = old; btn.disabled = false;
     toast(e.message || 'Pin failed.', 'err', 'abort');
+  } finally {
+    btn.classList.remove('pinning');
+    pbar?.classList.remove('indet'); pbar?.classList.add('hidden');
   }
 }
 (function initIpfsToken() {
