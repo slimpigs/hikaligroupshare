@@ -3662,7 +3662,7 @@ const I18N = {
     'btn.copyAll':  'Copy All as JSON',
     'btn.saveAllJson': 'Save All as JSON',
     'sec.remote':   'Remote Acquisition :: Pull from URL',
-    'urlPh':        'paste github raw .txt url, gist, or any direct cipher link…',
+    'urlPh':        'paste a github raw / gist / mega.nz file link, or any direct cipher url…',
     'btn.fetch':    'Fetch',
     'sec.intake':   'Cipher Intake :: Paste String or Upload File',
     'inputPh':      'paste the sealed transmission string here…',
@@ -3771,7 +3771,7 @@ const I18N = {
     'btn.copyAll':  '复制全部为 JSON',
     'btn.saveAllJson': '保存全部为 JSON',
     'sec.remote':   '远程获取 :: 从 URL 拉取',
-    'urlPh':        '粘贴 github raw .txt 链接、gist 或任意直链…',
+    'urlPh':        '粘贴 github raw / gist / mega.nz 文件链接，或任意直链…',
     'btn.fetch':    '获取',
     'sec.intake':   '密文接入 :: 粘贴字符串或上传文件',
     'inputPh':      '在此粘贴封印好的密文字符串…',
@@ -5208,7 +5208,74 @@ function setUrlStatus(msg, kind = '') {
   if (msg) el.appendChild(document.createTextNode(msg));
 }
 
+/* ====== MEGA SUPPORT ======
+   A mega.nz link can't be plain-fetched: it returns the web-app HTML, and the
+   real file is AES-encrypted with the key in the URL #fragment (never sent to a
+   server). So we speak MEGA's protocol — ask its API for a download URL, pull
+   the encrypted bytes, and AES-128-CTR decrypt in the browser. Anonymous file
+   links only (no login). Folder links aren't supported. */
+function megaB64ToBytes(s) {
+  s = s.replace(/-/g, '+').replace(/_/g, '/').replace(/[^A-Za-z0-9+/]/g, '');
+  while (s.length % 4) s += '=';
+  const bin = atob(s), a = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+  return a;
+}
+function megaBytesToA32(b) {
+  const n = Math.ceil(b.length / 4), a = new Array(n).fill(0);
+  for (let i = 0; i < b.length; i++) a[i >> 2] |= b[i] << (24 - (i % 4) * 8);
+  for (let i = 0; i < n; i++) a[i] >>>= 0;
+  return a;
+}
+function megaA32ToBytes(a) {
+  const b = new Uint8Array(a.length * 4);
+  for (let i = 0; i < a.length; i++) { b[4*i]=(a[i]>>>24)&255; b[4*i+1]=(a[i]>>>16)&255; b[4*i+2]=(a[i]>>>8)&255; b[4*i+3]=a[i]&255; }
+  return b;
+}
+function parseMega(url) {
+  let m = url.match(/mega(?:\.co)?\.nz\/file\/([0-9A-Za-z_-]+)#([0-9A-Za-z_-]+)/);
+  if (m) return { id: m[1], key: m[2] };
+  m = url.match(/mega(?:\.co)?\.nz\/#!([0-9A-Za-z_-]+)!([0-9A-Za-z_-]+)/);   // legacy link format
+  if (m) return { id: m[1], key: m[2] };
+  return null;
+}
+async function fetchMega({ id, key }) {
+  const ka = megaBytesToA32(megaB64ToBytes(key));
+  if (ka.length < 8) throw new Error('Bad MEGA key in the link.');
+  // File key = first 4 words XOR last 4; nonce = words 4..5.
+  const aesKey = megaA32ToBytes([ka[0]^ka[4], ka[1]^ka[5], ka[2]^ka[6], ka[3]^ka[7]]);
+  const nonce = megaA32ToBytes([ka[4], ka[5]]);
+  // 1) ask MEGA for a download URL (no custom headers → simple request, no preflight)
+  const apiResp = await fetch('https://g.api.mega.co.nz/cs?id=' + (Math.random() * 1e9 | 0),
+    { method: 'POST', body: JSON.stringify([{ a: 'g', g: 1, p: id }]) });
+  const data = await apiResp.json();
+  const r = Array.isArray(data) ? data[0] : data;
+  if (typeof r === 'number') throw new Error('MEGA API error ' + r + ' — link expired/removed or rate-limited.');
+  const dl = r && (typeof r.g === 'string' ? r.g : Array.isArray(r.g) ? r.g[0] : null);
+  if (!dl) throw new Error('MEGA returned no download URL (invalid link?).');
+  // 2) download encrypted bytes
+  const dlResp = await fetch(dl);
+  if (!dlResp.ok) throw new Error('MEGA download failed: HTTP ' + dlResp.status);
+  const enc = new Uint8Array(await dlResp.arrayBuffer());
+  // 3) AES-128-CTR: IV = nonce(8) + zero(8); low 64 bits are the block counter.
+  const counter = new Uint8Array(16); counter.set(nonce, 0);
+  const ck = await crypto.subtle.importKey('raw', aesKey, { name: 'AES-CTR' }, false, ['decrypt']);
+  return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-CTR', counter, length: 64 }, ck, enc));
+}
+
 async function fetchCipherFromUrl(rawInput) {
+  // MEGA links need their own protocol + client-side decrypt (see fetchMega).
+  const trimmed = rawInput.trim();
+  if (/mega(?:\.co)?\.nz\//i.test(trimmed)) {
+    const mega = parseMega(trimmed);
+    if (!mega) throw new Error("Only MEGA *file* links work (mega.nz/file/ID#KEY). Folder links aren't supported — open the folder and copy the file's own link.");
+    setUrlStatus('MEGA link — fetching + decrypting client-side…', 'busy');
+    const bytes = await fetchMega(mega);
+    const text = new TextDecoder().decode(bytes).trim();
+    if (!text) throw new Error('MEGA file decrypted to empty — wrong key in the link?');
+    return { text, finalUrl: 'mega.nz/file/' + mega.id, rewrote: false, viaProxy: false,
+             inflated: false, inflationRatio: 1, encoding: 'mega', wireBytes: bytes.length, decodedBytes: bytes.length };
+  }
   const final = normalizeFetchUrl(rawInput);
   const rewrote = final !== rawInput.trim();
   setUrlStatus(rewrote ? `rewrote → ${final}` : `fetching ${final}`, 'busy');

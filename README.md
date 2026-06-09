@@ -121,6 +121,7 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 - **Parallel breaching:** when a JSON bundle is loaded, the receiver groups ciphers by salt (one PBKDF2 per unique salt — usually just one for a same-batch bundle), then runs all AES-GCM decrypts in parallel.
 - **Packet format:** base64-encoded. **v5** (MIL-SPEC, current): same bytes as v4 but version `0x05` flags "pepper is an external random secret" (carried in the QR, not in the file). **v4** (MIL-SPEC): `MAGIC(4) | 0x04 | ITERATIONS(4, big-endian) | CHECKWORD-INDEX(2) | SALT(16) | IV(12) | CIPHERTEXT` — adds the 2-byte checkword index for auto-verify. **v3** (ace modes): `MAGIC(4) | 0x03 | ITERATIONS(4) | SALT(16) | IV(12) | CIPHERTEXT` — the KDF iteration count travels in the packet so any strength breaches without extra coordination. **v2** (`MAGIC | 0x02 | SALT | IV | CIPHERTEXT`, fixed 310K) is still fully readable, so older sealed files keep working.
 - **Bundle format:** `[{"filename": "...", "cipher": "..."}, ...]` — a plain JSON array of single-cipher entries. Saved as `skystriker-bundle-<ISO-timestamp>-<N>files.json`.
+- **MEGA links:** the **Fetch** field accepts `mega.nz/file/ID#KEY` links. A MEGA link can't be plain-fetched (it returns the web-app HTML; the file is AES-encrypted with the key in the URL `#fragment`), so the page speaks MEGA's API, downloads the encrypted bytes, and **AES-128-CTR-decrypts them in your browser** — then runs the normal breach. Anonymous file links only; folder links aren't supported. (This is just retrieval; the SSAE ciphertext is still decrypted by your words as usual.)
 - **Zero network during crypto.** No server calls during encrypt or decrypt. Your words never leave your browser.
 
 ## Please read before using
@@ -256,6 +257,7 @@ If breach fails with *"sealed under a different ace mode"*, switch the ACE SELEC
 - **并行破封**：加载 JSON 密文包时，接收端按 salt 分组（一组只跑一次 PBKDF2 —— 同批次封印的密文包通常只有一组），然后所有 AES-GCM 解密并行执行。
 - **数据包格式**：base64 编码。**v5**（军规模式，当前）：字节布局与 v4 相同，但版本号 `0x05` 表示「pepper 是外部随机密钥」（保存在 QR 中，不在文件里）。**v4**（军规模式）：`MAGIC(4) | 0x04 | 迭代次数(4，大端) | 校验词索引(2) | SALT(16) | IV(12) | 密文` —— 增加 2 字节校验词索引用于自动核对。**v3**（ace 模式）：`MAGIC(4) | 0x03 | 迭代次数(4) | SALT(16) | IV(12) | 密文` —— 迭代次数随包传递，任意强度都能直接破封。**v2**（`MAGIC | 0x02 | SALT | IV | 密文`，固定 31 万）仍可完整读取，旧密文继续可用。
 - **密文包格式**：`[{"filename": "...", "cipher": "..."}, ...]` —— 单个密文条目的 JSON 数组。保存文件名为 `skystriker-bundle-<ISO 时间戳>-<N>files.json`。
+- **MEGA 链接：** **Fetch** 输入框支持 `mega.nz/file/ID#KEY` 链接。MEGA 链接无法直接 fetch（返回的是网页 HTML，文件用 AES 加密、密钥在 URL 的 `#fragment` 里），所以页面会调用 MEGA API、下载加密字节，并在**浏览器内用 AES-128-CTR 解密**，再进行常规破封。仅支持匿名文件链接，不支持文件夹链接。（这只是取回文件；SSAE 密文仍由你的密码词解密。）
 - **加解密过程零网络**。没有任何服务器请求，密码词不会离开你的浏览器。
 
 ## 重要提示 — 请认真阅读
