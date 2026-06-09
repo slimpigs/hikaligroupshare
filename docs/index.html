@@ -344,9 +344,9 @@
 .qrtool-stage { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-top: 22px; }
 .qrtool-stage[aria-hidden="true"] { display: none; }
 .qrtool-card {
-  flex: 0 0 auto; background: #fff; padding: 14px; line-height: 0; position: relative;
+  flex: 0 0 auto; background: var(--void); padding: 14px; line-height: 0; position: relative;
   border: 1px solid var(--red);
-  box-shadow: 0 0 28px var(--shadow-r);
+  box-shadow: 0 0 28px var(--shadow-r), inset 0 0 30px rgba(0,0,0,0.5);
   clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
 }
 .qrtool-card canvas { display: block; image-rendering: pixelated; width: 220px; height: 220px; }
@@ -3698,6 +3698,9 @@ const I18N = {
     'toast.pepperNeeded':  'This file needs its pepper QR — scan it (camera / image) or paste the pepper first.',
     'toast.pepperLoaded':  'Pepper loaded ✓ — ready to breach.',
     'toast.qrBad':         'No Sky Striker pepper QR found in that image.',
+    'toast.qrNoCode':      'No QR code detected in that image — use the camera, or a clearer / larger image.',
+    'toast.qrNotPepper':   "That QR isn't a pepper key (expected an SSKP1 pepper QR).",
+    'toast.qrNotPepperLink':"That's a link/cipher QR — load it with 🖼 IMAGE under Fetch, not the pepper box.",
     'toast.pkgSaved':      'Key package saved — QR image + cipher card PDF.',
     'toast.pepperRotated': 'New random pepper — re-download the key package.',
     'toast.noCamera':      'No camera available — upload the QR image or paste the pepper instead.',
@@ -3821,6 +3824,9 @@ const I18N = {
     'toast.pepperNeeded':  '此文件需要配套的密钥 QR —— 请先扫描（相机／图片）或粘贴 pepper。',
     'toast.pepperLoaded':  'Pepper 已载入 ✓ —— 可以破封。',
     'toast.qrBad':         '图片中未找到 Sky Striker 密钥 QR。',
+    'toast.qrNoCode':      '图片中未识别到二维码 —— 请用相机，或更清晰／更大的图片。',
+    'toast.qrNotPepper':   '这不是 pepper 二维码（需要 SSKP1 开头的 pepper QR）。',
+    'toast.qrNotPepperLink':'这是链接／密文二维码 —— 请用 Fetch 下方的 🖼 图片按钮载入，而不是 pepper 框。',
     'toast.pkgSaved':      '密钥包已保存 —— QR 图片 + 密码卡 PDF。',
     'toast.pepperRotated': '已更换随机 pepper —— 请重新下载密钥包。',
     'toast.noCamera':      '没有可用相机 —— 请上传 QR 图片或粘贴 pepper。',
@@ -4551,10 +4557,19 @@ function drawQrCanvas(canvas, text, scale, quiet, dark, light) {
     if (q.isDark(r, c)) ctx.fillRect((c + quiet) * scale, (r + quiet) * scale, scale, scale);
   return q;
 }
-function qrPngBlob(text) {
+function qrPngBlob(text, ink, bg) {
   const cv = document.createElement('canvas');
-  drawQrCanvas(cv, text, 8, 4, '#000', '#fff');   // black/white = max scanner compatibility
+  drawQrCanvas(cv, text, 8, 4, ink || '#000', bg || '#fff');   // default black/white = max compat
   return new Promise(res => cv.toBlob(res, 'image/png'));
+}
+// Theme-matched QR ink: the mode's bright primary on its near-black void. High
+// luminance contrast keeps it scannable (jsQR + phone cameras handle light-on-dark).
+function themedQrInk() {
+  const cs = getComputedStyle(document.documentElement);
+  return {
+    ink: (cs.getPropertyValue('--red').trim() || '#00ff66'),
+    bg:  (cs.getPropertyValue('--void').trim() || '#02160b'),
+  };
 }
 
 /* --- minimal single-page PDF: ASCII text + filled rects, no library --- */
@@ -4643,7 +4658,8 @@ function updateQrTool() {
   if (!text) { stage.setAttribute('aria-hidden', 'true'); card.innerHTML = ''; return; }
   let cv = card.querySelector('canvas');
   if (!cv) { cv = document.createElement('canvas'); card.appendChild(cv); }
-  try { drawQrCanvas(cv, text, 6, 4, '#000', '#fff'); }
+  const { ink, bg } = themedQrInk();
+  try { drawQrCanvas(cv, text, 6, 4, ink, bg); }
   catch { stage.setAttribute('aria-hidden', 'true'); card.innerHTML = ''; return toast(t('toast.qrTooLong'), 'err', 'abort'); }
   stage.setAttribute('aria-hidden', 'false');
   const len = $('#qrToolLen'); if (len) len.textContent = text.length.toLocaleString() + ' chars';
@@ -4652,14 +4668,16 @@ async function qrToolDownload() {
   const text = $('#qrToolInput')?.value.trim();
   if (!text) return toast(t('toast.qrNoText'), 'err', 'abort');
   const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  downloadBlob(await qrPngBlob(text), 'skystriker-qr-' + stamp + '.png');
+  const { ink, bg } = themedQrInk();
+  downloadBlob(await qrPngBlob(text, ink, bg), 'skystriker-qr-' + stamp + '.png');
   toast(t('toast.qrSaved'), 'ok', 'save');
 }
 async function qrToolCopy() {
   const text = $('#qrToolInput')?.value.trim();
   if (!text) return toast(t('toast.qrNoText'), 'err', 'abort');
   try {
-    const blob = await qrPngBlob(text);
+    const { ink, bg } = themedQrInk();
+    const blob = await qrPngBlob(text, ink, bg);
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
     toast(t('toast.qrCopied'), 'ok', 'copy');
   } catch { toast(t('toast.copyFail'), 'err', 'abort'); }
@@ -4671,11 +4689,19 @@ $('#btnQrReset')?.addEventListener('click', () => { const i = $('#qrToolInput');
 
 /* --- breach: recover the pepper from a QR (camera / image / paste) --- */
 function applyScannedText(text) {
-  if (!text || text.indexOf(QR_PREFIX) !== 0) { toast(t('toast.qrBad'), 'err', 'abort'); return false; }
-  scannedPepper = text.slice(QR_PREFIX.length).trim();
-  updateScanUI();
-  toast(t('toast.pepperLoaded'), 'ok', 'extracted');
-  return true;
+  if (text && text.indexOf(QR_PREFIX) === 0) {
+    scannedPepper = text.slice(QR_PREFIX.length).trim();
+    updateScanUI();
+    toast(t('toast.pepperLoaded'), 'ok', 'extracted');
+    return true;
+  }
+  // Decoded a QR, but it isn't a pepper. Point the user to the right place.
+  if (text && (/^https?:\/\//i.test(text) || /mega(?:\.co)?\.nz/i.test(text) || looksLikeCipher(text))) {
+    toast(t('toast.qrNotPepperLink'), 'err', 'abort');
+  } else {
+    toast(t('toast.qrNotPepper'), 'err', 'abort');
+  }
+  return false;
 }
 function decodeQrImageData(d) { try { const r = jsQR(d.data, d.width, d.height); return r ? r.data : null; } catch { return null; } }
 // Generic QR scanners — a callback consumes the decoded text. onText may return
@@ -4689,9 +4715,9 @@ function scanQrImage(file, onText) {
     const ctx = cv.getContext('2d', { willReadFrequently: true }); ctx.drawImage(img, 0, 0, w, h);
     URL.revokeObjectURL(url);
     const text = decodeQrImageData(ctx.getImageData(0, 0, w, h));
-    if (text) onText(text); else toast(t('toast.qrBad'), 'err', 'abort');
+    if (text) onText(text); else toast(t('toast.qrNoCode'), 'err', 'abort');
   };
-  img.onerror = () => { URL.revokeObjectURL(url); toast(t('toast.qrBad'), 'err', 'abort'); };
+  img.onerror = () => { URL.revokeObjectURL(url); toast(t('toast.qrNoCode'), 'err', 'abort'); };
   img.src = url;
 }
 async function startQrCamera(videoSel, camSel, onText) {
