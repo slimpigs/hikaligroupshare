@@ -340,6 +340,29 @@
 .url-qr { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 9px 0 2px; }
 .url-qr .uq-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em; color: var(--ash); text-transform: uppercase; }
 
+/* LINK ▸ QR utility — clean QR on a white card inside a themed reticle frame. */
+.qrtool-stage { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-top: 22px; }
+.qrtool-stage[aria-hidden="true"] { display: none; }
+.qrtool-card {
+  flex: 0 0 auto; background: #fff; padding: 14px; line-height: 0; position: relative;
+  border: 1px solid var(--red);
+  box-shadow: 0 0 28px var(--shadow-r);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+.qrtool-card canvas { display: block; image-rendering: pixelated; width: 220px; height: 220px; }
+.qrtool-card::before, .qrtool-card::after {
+  content: ''; position: absolute; width: 15px; height: 15px; pointer-events: none; border: 2px solid var(--red);
+  filter: drop-shadow(0 0 4px var(--shadow-r));
+}
+.qrtool-card::before { top: -5px; left: -5px; border-right: none; border-bottom: none; }
+.qrtool-card::after  { bottom: -5px; right: -5px; border-left: none; border-top: none; }
+.qrtool-meta { flex: 1; min-width: 210px; display: flex; flex-direction: column; gap: 9px; font-family: 'JetBrains Mono', monospace; }
+.qrtool-cap { color: var(--red); font-size: 11px; font-weight: 700; letter-spacing: 0.26em; text-transform: uppercase; text-shadow: 0 0 10px var(--shadow-r); }
+.qrtool-cap::before { content: '◉ '; }
+.qrtool-hint { color: var(--ash); font-size: 11px; line-height: 1.6; letter-spacing: 0.03em; }
+.qrtool-len { color: var(--red-deep); font-size: 9px; letter-spacing: 0.16em; }
+#qrToolInput { min-height: 84px; }
+
 /* Richer classified banner: hazard ends + a live control code on the right. */
 [data-theme="mil"] .mil-banner {
   background: linear-gradient(180deg, rgba(255,176,0,0.10), rgba(255,176,0,0.02));
@@ -3350,6 +3373,9 @@ body[data-mode="decode"] .rail-pulse {
     <button class="tab-btn" data-tab="decode">
       <span class="idx">// LOADOUT 02</span>BREACH
     </button>
+    <button class="tab-btn" data-tab="qrtool">
+      <span class="idx">// UTILITY</span>LINK ▸ QR
+    </button>
   </nav>
 
   <!-- ENCODE PANEL -->
@@ -3446,6 +3472,8 @@ body[data-mode="decode"] .rail-pulse {
     <div class="url-qr">
       <span class="uq-label" data-i18n="urlqr.label">or scan a QR of the link/cipher:</span>
       <button class="forge-btn" id="btnUrlScanCam" type="button">📷 <span data-i18n="scan.cam">CAMERA</span></button>
+      <label class="forge-btn" for="urlScanImgInput">🖼 <span data-i18n="scan.img">IMAGE</span></label>
+      <input type="file" id="urlScanImgInput" accept="image/*" hidden>
     </div>
     <div class="ms-cam" id="urlScanCam"><video id="urlScanVideo" playsinline muted></video></div>
     <div class="url-status" id="urlStatus"></div>
@@ -3525,6 +3553,29 @@ body[data-mode="decode"] .rail-pulse {
       <div class="preview-canvas" id="prevCanvas"></div>
       <div class="btn-row" style="margin: 14px; gap: 10px;">
         <button class="btn" id="btnDownload" data-i18n="btn.download">Download Recovered File</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- LINK ▸ QR PANEL — encode a share link / cipher into a clean, scannable QR -->
+  <section class="panel" data-panel="qrtool">
+    <span class="corner-tr"></span><span class="corner-br"></span>
+
+    <div class="section-label" data-i18n="qr.sec">Link ▸ QR :: encode a link or cipher to a scannable code</div>
+    <textarea class="input-cipher" id="qrToolInput" placeholder="paste a share link (e.g. a MEGA link), or any text…" data-i18n-attr="placeholder:qr.ph" spellcheck="false" autocomplete="off"></textarea>
+
+    <div class="btn-row">
+      <button class="btn" id="btnQrDownload" data-i18n="qr.dl">Download QR PNG</button>
+      <button class="btn ghost" id="btnQrCopyImg" data-i18n="qr.copy">Copy QR</button>
+      <button class="btn ghost" id="btnQrReset" data-i18n="btn.reset">Reset</button>
+    </div>
+
+    <div class="qrtool-stage" id="qrToolStage" aria-hidden="true">
+      <div class="qrtool-card" id="qrToolCard"></div>
+      <div class="qrtool-meta">
+        <div class="qrtool-cap" data-i18n="qr.cap">SCAN-READY CODE</div>
+        <div class="qrtool-hint" data-i18n="qr.hint">Updates live as you type. Download it, drop it into BREACH ▸ IMAGE, or point a camera at it.</div>
+        <div class="qrtool-len" id="qrToolLen"></div>
       </div>
     </div>
   </section>
@@ -3664,6 +3715,16 @@ const I18N = {
     'toast.qrCipher':  'Loaded the cipher from the QR.',
     'toast.qrText':    'Loaded the QR text into the URL field.',
     'toast.qrIsPepper':"That's a pepper QR — scan it in the PEPPER KEY box below, not here.",
+    'qr.sec':       'Link ▸ QR :: encode a link or cipher to a scannable code',
+    'qr.ph':        'paste a share link (e.g. a MEGA link), or any text…',
+    'qr.dl':        'Download QR PNG',
+    'qr.copy':      'Copy QR',
+    'qr.cap':       'SCAN-READY CODE',
+    'qr.hint':      'Updates live as you type. Download it, drop it into BREACH ▸ IMAGE, or point a camera at it.',
+    'toast.qrSaved':   'QR PNG saved.',
+    'toast.qrCopied':  'QR image copied to clipboard.',
+    'toast.qrNoText':  'Type a link or text first.',
+    'toast.qrTooLong': 'Too much text for one QR — shorten it (a link is ideal).',
     'toast.copyFail':    'Clipboard blocked — copy them manually.',
     'toast.cardSaved':   'Key card downloaded. Keep it offline.',
     'mil.banner':   'CLASSIFIED // MIL-SPEC // PBKDF2-1,000,000 ROUNDS // EYES ONLY',
@@ -3777,6 +3838,16 @@ const I18N = {
     'toast.qrCipher':  '已从二维码载入密文。',
     'toast.qrText':    '已把二维码文本载入到 URL 框。',
     'toast.qrIsPepper':'这是 pepper 二维码 —— 请在下方 PEPPER KEY 区扫描，而不是这里。',
+    'qr.sec':       '链接 ▸ 二维码 :: 把链接或密文编码为可扫描的二维码',
+    'qr.ph':        '粘贴分享链接（如 MEGA 链接）或任意文本…',
+    'qr.dl':        '下载二维码 PNG',
+    'qr.copy':      '复制二维码',
+    'qr.cap':       '可扫描代码',
+    'qr.hint':      '随输入实时更新。可下载、拖到 BREACH ▸ 图片，或用相机对准它。',
+    'toast.qrSaved':   '二维码 PNG 已保存。',
+    'toast.qrCopied':  '二维码图片已复制到剪贴板。',
+    'toast.qrNoText':  '请先输入链接或文本。',
+    'toast.qrTooLong': '文本太长，单个二维码放不下 —— 请缩短（链接最合适）。',
     'toast.copyFail':    '剪贴板被拦截 — 请手动复制。',
     'toast.cardSaved':   '密钥卡已下载，请离线保管。',
     'mil.banner':   '机密 // 军规模式 // PBKDF2-1,000,000 轮 // 仅限授权',
@@ -4560,6 +4631,44 @@ function updateMilPackageUI() {
 $('#btnKeyPackage')?.addEventListener('click', downloadKeyPackage);
 $('#btnNewPepper')?.addEventListener('click', () => { newMilPepper(); updateMilPackageUI(); toast(t('toast.pepperRotated'), 'ok', 'loadout'); });
 
+/* ====== LINK ▸ QR utility tab ======
+   Turn any link/cipher into a clean, scannable QR (black on white = maximum
+   reliability). This is the companion to the BREACH ▸ IMAGE scan: a QR you
+   generate here scans perfectly, unlike a photo of one. Reuses drawQrCanvas /
+   qrPngBlob / downloadBlob. */
+function updateQrTool() {
+  const input = $('#qrToolInput'), stage = $('#qrToolStage'), card = $('#qrToolCard');
+  if (!input || !stage || !card) return;
+  const text = input.value.trim();
+  if (!text) { stage.setAttribute('aria-hidden', 'true'); card.innerHTML = ''; return; }
+  let cv = card.querySelector('canvas');
+  if (!cv) { cv = document.createElement('canvas'); card.appendChild(cv); }
+  try { drawQrCanvas(cv, text, 6, 4, '#000', '#fff'); }
+  catch { stage.setAttribute('aria-hidden', 'true'); card.innerHTML = ''; return toast(t('toast.qrTooLong'), 'err', 'abort'); }
+  stage.setAttribute('aria-hidden', 'false');
+  const len = $('#qrToolLen'); if (len) len.textContent = text.length.toLocaleString() + ' chars';
+}
+async function qrToolDownload() {
+  const text = $('#qrToolInput')?.value.trim();
+  if (!text) return toast(t('toast.qrNoText'), 'err', 'abort');
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  downloadBlob(await qrPngBlob(text), 'skystriker-qr-' + stamp + '.png');
+  toast(t('toast.qrSaved'), 'ok', 'save');
+}
+async function qrToolCopy() {
+  const text = $('#qrToolInput')?.value.trim();
+  if (!text) return toast(t('toast.qrNoText'), 'err', 'abort');
+  try {
+    const blob = await qrPngBlob(text);
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    toast(t('toast.qrCopied'), 'ok', 'copy');
+  } catch { toast(t('toast.copyFail'), 'err', 'abort'); }
+}
+$('#qrToolInput')?.addEventListener('input', updateQrTool);
+$('#btnQrDownload')?.addEventListener('click', qrToolDownload);
+$('#btnQrCopyImg')?.addEventListener('click', qrToolCopy);
+$('#btnQrReset')?.addEventListener('click', () => { const i = $('#qrToolInput'); if (i) i.value = ''; updateQrTool(); });
+
 /* --- breach: recover the pepper from a QR (camera / image / paste) --- */
 function applyScannedText(text) {
   if (!text || text.indexOf(QR_PREFIX) !== 0) { toast(t('toast.qrBad'), 'err', 'abort'); return false; }
@@ -4647,6 +4756,7 @@ function handleFetchQr(text) {
   return true;
 }
 $('#btnUrlScanCam')?.addEventListener('click', () => startQrCamera('#urlScanVideo', '#urlScanCam', handleFetchQr));
+$('#urlScanImgInput')?.addEventListener('change', (e) => { const f = e.target.files?.[0]; if (f) scanQrImage(f, handleFetchQr); e.target.value = ''; });
 
 
 function readCipherWords(container) {
