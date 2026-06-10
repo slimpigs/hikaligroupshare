@@ -4148,6 +4148,13 @@ const QR_PREFIX = 'SSKP1:';   // Sky Striker Key Pepper, v1 — wraps the pepper
 let milPepper = null;         // active random pepper (seal side)
 let scannedPepper = null;     // pepper recovered for breaching a v5 packet
 let scanStream = null, scanRAF = null, scanVideoSel = null, scanCamSel = null;
+// QR channel colours — declared here (not near the QR helpers) because qrInkFor()
+// runs during boot-into-MIL (updateMilPackageUI) BEFORE that later block executes.
+const QR_CHANNELS = {
+  pepper: { ink: '#00ff66', bg: '#02160b' },   // 🟢 green  → PEPPER box
+  words:  { ink: '#22e6ff', bg: '#021a1e' },   // 🔵 cyan   → last-6 word slots
+  link:   { ink: '#ff5cb0', bg: '#1a0512' },   // 🟣 magenta→ Fetch field / file links
+};
 
 function setAceMode(key, opts = {}) {
   const cfg = ACE_MODES[key];
@@ -4714,13 +4721,6 @@ function themedQrInk() {
     bg:  (cs.getPropertyValue('--void').trim() || '#02160b'),
   };
 }
-// In MIL-SPEC there are THREE QR channels, each color-coded to the box it fills,
-// so they're never confused. Non-MIL falls back to the theme colour.
-const QR_CHANNELS = {
-  pepper: { ink: '#00ff66', bg: '#02160b' },   // 🟢 green  → PEPPER box
-  words:  { ink: '#22e6ff', bg: '#021a1e' },   // 🔵 cyan   → last-6 word slots
-  link:   { ink: '#ff5cb0', bg: '#1a0512' },   // 🟣 magenta→ Fetch field / file links
-};
 function qrInkFor(channel) {
   return (currentMode() === 'mil' && QR_CHANNELS[channel]) ? QR_CHANNELS[channel] : themedQrInk();
 }
