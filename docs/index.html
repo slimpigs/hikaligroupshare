@@ -6647,13 +6647,15 @@ $('#btnBreachAll').addEventListener('click', async () => {
   if (ok === total) toast(t('toast.bundleBreachOk', ok, total), 'ok', 'breach');
   else toast(t('toast.bundleBreachPartial', ok, total), 'err', 'breach');
 
-  // Auto-preview the first decrypted image so a breached bundle isn't a blank wall
-  // (single-file breach already auto-previews; this matches that for bundles).
-  const firstImg = results.find(r => r.ok && /^image\//.test(r.mime || ''));
-  if (firstImg) {
-    const row = rows[firstImg.rowIdx];
+  // Auto-preview the first decrypted result so a breached bundle isn't a blank
+  // wall (matches single-file breach). Prefer visual media (image/video), but
+  // fall back to the first OK result of any type so it always shows something.
+  const firstView = results.find(r => r.ok && /^(image|video)\//.test(r.mime || ''))
+                 || results.find(r => r.ok);
+  if (firstView) {
+    const row = rows[firstView.rowIdx];
     const pbtn = row && row.querySelector('.prev-trigger');
-    if (row && pbtn) previewBreachedResult(firstImg, row, pbtn);
+    if (row && pbtn) previewBreachedResult(firstView, row, pbtn);
   }
 
   setCpuProcessing(false);
