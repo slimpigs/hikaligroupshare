@@ -4414,8 +4414,11 @@ function buildCipherSlots(container, count) {
       ? `0x${(i - 1).toString(16).toUpperCase().padStart(2, '0')}`
       : `W${String(i).padStart(2, '0')}`;
     const idxLabel = makeEl('span', { cls: 'slot-idx', text: label });
+    // MIL last-6 are filled by scanning the cyan WORDS QR, so hint that instead of
+    // implying they must be typed. First-6 (memorised) and ace modes keep a type hint.
+    const ph = mil ? (i > 6 ? '⇠ scan QR' : 'type') : 'word';
     const input = makeEl('input', { attrs: {
-      type: 'text', maxlength: '32', placeholder: mil ? 'segment' : 'word',
+      type: 'text', maxlength: '32', placeholder: ph,
       autocomplete: 'off', spellcheck: 'false', 'data-idx': String(i)
     }});
     const armed = makeEl('span', { cls: 'slot-armed', attrs: { 'aria-hidden': 'true' } });
@@ -4775,18 +4778,29 @@ function cipherCardPdfBlob(words) {
   line(9, 'cipher    AES-256-GCM   kdf Argon2id ' + (ARGON_PARAMS.mem / 1024) + 'MB t' + ARGON_PARAMS.time);
   line(9, 'entropy   ~ ' + Math.round(WORD_BITS * words.length) + ' bits (' + words.length + ' words)');
   line(9, 'checkword ' + check + '  (recipient should see this same word)');
-  y -= 6; line(11, 'CIPHER WORDS (' + words.length + '):');
-  words.forEach((w, i) => line(11, '  0x' + i.toString(16).toUpperCase().padStart(2, '0') + '   ' + w));
-  y -= 6; line(10, 'PEPPER  (random secret; also in the QR):');
+  // FIRST 6 stay as text (the half you already know); LAST 6 go in the BLUE QR.
+  const first6 = words.slice(0, 6), last6 = words.slice(-6);
+  y -= 6; line(11, 'FIRST 6 WORDS (the half you already know / keep):');
+  first6.forEach((w, i) => line(11, '  0x' + i.toString(16).toUpperCase().padStart(2, '0') + '   ' + w));
+  y -= 2; line(10, 'LAST 6 WORDS  ->  the BLUE QR below (scan to fill slots 7-12)');
+  y -= 4; line(10, 'PEPPER  (random secret; the GREEN/PEPPER QR):');
   line(9, '  ' + pepper);
-  // QR bottom-right (PDF y grows upward → flip rows)
-  const q = qrModel(milQrText()), n = q.getModuleCount(), mod = 4.2, quiet = 4, qs = (n + quiet * 2) * mod;
-  const qx = W - qs - 48, qy = 70;
-  ops.push('1 1 1 rg', pdfRect(qx, qy, qs, qs), '0 0 0 rg');
-  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++)
-    if (q.isDark(r, c)) ops.push(pdfRect(qx + (c + quiet) * mod, qy + (n - 1 - r + quiet) * mod, mod, mod));
-  ops.push(pdfText(qx, qy - 12, 8, 'PEPPER QR -- scan to breach'));
-  ops.push(pdfText(48, 42, 8, 'Send the QR separately from the ciphertext. The file cannot open without this pepper.'));
+  // Two QRs along the bottom (PDF y grows upward → flip rows):
+  //   left  = BLUE last-6 words QR   right = pepper QR.
+  const mod = 4.0, quiet = 4, qy = 92;
+  const drawQr = (text, qx, rg) => {
+    const q = qrModel(text), n = q.getModuleCount(), qs = (n + quiet * 2) * mod;
+    ops.push('1 1 1 rg', pdfRect(qx, qy, qs, qs), rg);
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++)
+      if (q.isDark(r, c)) ops.push(pdfRect(qx + (c + quiet) * mod, qy + (n - 1 - r + quiet) * mod, mod, mod));
+    ops.push('0 0 0 rg');
+    return qs;
+  };
+  drawQr(WORDS_QR_PREFIX + last6.join(' '), 48, '0.03 0.24 0.40 rg');   // blue last-6
+  ops.push('0.03 0.24 0.40 rg', pdfText(48, qy - 13, 8, 'BLUE QR -- last 6 words (scan to fill slots 7-12)'), '0 0 0 rg');
+  const ps = drawQr(milQrText(), W - (qrModel(milQrText()).getModuleCount() + quiet * 2) * mod - 48, '0 0 0 rg');
+  ops.push(pdfText(W - ps - 48, qy - 13, 8, 'PEPPER QR -- scan to breach'));
+  ops.push(pdfText(48, 50, 8, 'Send the pepper QR separately from the ciphertext. The file cannot open without all of: first-6 + last-6 words + pepper.'));
   return buildPdf(W, H, ops);
 }
 async function downloadKeyPackage() {
@@ -6078,6 +6092,7 @@ $('#btnFetchUrl').addEventListener('click', async () => {
   if (!raw) { setUrlStatus('paste a url first', 'err'); return; }
   const btn = $('#btnFetchUrl');
   btn.disabled = true;
+  btn.classList.add('pinning');   // pulse + braille spinner so a slow IPFS fetch never looks frozen
   const fbar = $('#decProgress');
   fbar?.classList.remove('hidden'); fbar?.classList.add('indet');   // animated "working" while fetching
   try {
@@ -6101,6 +6116,7 @@ $('#btnFetchUrl').addEventListener('click', async () => {
     toast(err.message || 'Fetch failed.', 'err', 'abort');
   } finally {
     btn.disabled = false;
+    btn.classList.remove('pinning');
     fbar?.classList.remove('indet'); fbar?.classList.add('hidden');
   }
 });
@@ -6630,6 +6646,15 @@ $('#btnBreachAll').addEventListener('click', async () => {
   const total = breachBundle.length;
   if (ok === total) toast(t('toast.bundleBreachOk', ok, total), 'ok', 'breach');
   else toast(t('toast.bundleBreachPartial', ok, total), 'err', 'breach');
+
+  // Auto-preview the first decrypted image so a breached bundle isn't a blank wall
+  // (single-file breach already auto-previews; this matches that for bundles).
+  const firstImg = results.find(r => r.ok && /^image\//.test(r.mime || ''));
+  if (firstImg) {
+    const row = rows[firstImg.rowIdx];
+    const pbtn = row && row.querySelector('.prev-trigger');
+    if (row && pbtn) previewBreachedResult(firstImg, row, pbtn);
+  }
 
   setCpuProcessing(false);
   btn.disabled = false;
