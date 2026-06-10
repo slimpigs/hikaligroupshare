@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SKY STRIKER // ROZE / ZEKE RELAY</title>
+<!-- Apply the saved theme IMMEDIATELY (before the ~500KB body parses), so a slow
+     load never flashes the default mode / looks like it "forgot" MIL-SPEC. The
+     full setAceMode() later fills in labels, grids, banner, etc. -->
+<script>try{var _m=localStorage.getItem('skystriker-theme');if(_m)document.documentElement.setAttribute('data-theme',_m);}catch(e){}</script>
 
 <!-- Favicons + touch icon (cyber-sigil set — theme-neutral so it reads in any ace mode) -->
 <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
@@ -377,6 +381,67 @@
 [data-theme="mil"] .qrtool-card { border-color: #ff5cb0; box-shadow: 0 0 28px rgba(255,92,176,0.3), inset 0 0 30px rgba(0,0,0,0.5); }
 [data-theme="mil"] .qrtool-card::before, [data-theme="mil"] .qrtool-card::after { border-color: #ff5cb0; filter: drop-shadow(0 0 4px rgba(255,92,176,0.5)); }
 [data-theme="mil"] .qrtool-cap { color: #ff5cb0; text-shadow: 0 0 10px rgba(255,92,176,0.5); }
+
+/* ===== GALLERY — top-level image-chain view (toggled like a mode) ===== */
+.gal-toggle {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--ash); background: rgba(0,0,0,0.35);
+  border: 1px solid var(--strut); padding: 5px 11px; cursor: pointer;
+  transition: color .18s, border-color .18s, box-shadow .18s, background .18s;
+}
+.gal-toggle:hover { color: #b98bff; border-color: #6b46c1; box-shadow: 0 0 9px rgba(168,120,255,0.25); }
+.gal-toggle.active { color: #14041f; background: linear-gradient(180deg, #c9a3ff, #a877ff); border-color: #ddc6ff; box-shadow: 0 0 14px rgba(168,120,255,0.5); }
+/* When the gallery is on, it takes over the work area (it's a mode, not a tab). */
+.gallery-view { display: none; }
+body.gallery-on .tabs, body.gallery-on .panel { display: none !important; }
+body.gallery-on .gallery-view { display: block; animation: galIn .3s ease both; }
+@keyframes galIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.gal-head { margin: 6px 0 4px; }
+.gal-title { font-family: 'JetBrains Mono', monospace; font-size: 19px; letter-spacing: 2px; color: var(--red); text-shadow: 0 0 12px var(--shadow-r); }
+.gal-title .sep { color: var(--ash); margin: 0 6px; }
+.gal-sub { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; color: var(--ash); text-transform: uppercase; margin-top: 3px; }
+.gal-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 14px 0 18px; padding-bottom: 14px; border-bottom: 1px solid var(--strut); }
+.gal-bar #galToken { flex: 1; min-width: 180px; background: var(--hull); border: 1px solid var(--strut); color: var(--bone); font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 8px 10px; outline: none; }
+.gal-bar #galToken:focus { border-color: var(--red); box-shadow: 0 0 8px var(--shadow-r); }
+.gal-status { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.05em; }
+.gal-status.busy { color: var(--gold); animation: busyPulse 1.15s ease-in-out infinite; }
+.gal-status.ok { color: var(--ok); } .gal-status.err { color: var(--red); }
+.gal-empty { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ash); padding: 24px 4px; }
+
+/* The chain: vertical column of blocks joined by a glowing spine. */
+.gal-chain { position: relative; display: flex; flex-direction: column; gap: 22px; padding-left: 6px; }
+.gal-block {
+  position: relative; border: 1px solid var(--strut); background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(0,0,0,0.25));
+  border-left: 3px solid var(--red); padding: 13px 15px; border-radius: 3px;
+}
+/* connector to the block below (newest on top, so spine drops to the older one) */
+.gal-block::after {
+  content: ''; position: absolute; left: -1px; bottom: -23px; width: 3px; height: 23px;
+  background: linear-gradient(180deg, var(--red), transparent); opacity: .6;
+}
+.gal-chain .gal-block:last-child::after { display: none; }
+.gal-block.genesis { border-left-color: var(--gold); }
+.gb-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px; margin-bottom: 9px; }
+.gb-idx { color: var(--bone); font-weight: 700; letter-spacing: 0.1em; }
+.gb-hash { color: var(--red); letter-spacing: 0.06em; text-shadow: 0 0 8px var(--shadow-r); }
+.gb-prev { color: var(--ash); letter-spacing: 0.04em; }
+.gb-body { display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.gb-meta { flex: 1; min-width: 160px; }
+.gb-title { font-family: 'JetBrains Mono', monospace; font-size: 15px; color: var(--bone); letter-spacing: 0.04em; }
+.gb-by { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ash); margin-top: 3px; }
+.gb-cid { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--red-deep); margin-top: 5px; word-break: break-all; }
+.gb-actions { display: flex; gap: 8px; margin-top: 10px; }
+.gb-qr { flex: 0 0 auto; }
+
+/* Publish-to-gallery controls in the seal IPFS bar. */
+.gal-pub-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 14px; }
+.gal-pub-check { display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: var(--red); cursor: pointer; white-space: nowrap; }
+.gal-pub-check input { accent-color: var(--red); }
+.gal-pub-bar input[type="text"] { flex: 1; min-width: 120px; background: var(--hull); border: 1px solid var(--strut); color: var(--bone); font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 6px 9px; outline: none; }
+.gal-pub-bar input[type="text"]:focus { border-color: var(--red); box-shadow: 0 0 8px var(--shadow-r); }
 
 /* LINK ▸ QR utility — clean QR on a white card inside a themed reticle frame. */
 .qrtool-stage { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-top: 22px; }
@@ -3304,6 +3369,9 @@ body[data-mode="decode"] .rail-pulse {
     <button class="mil-toggle" id="milToggle" type="button" aria-pressed="false" title="Hardened classified mode · Argon2id 64 MB (memory-hard)">
       <span class="mil-mark" aria-hidden="true"></span><span data-i18n="mil.enter">MIL-SPEC</span>
     </button>
+    <button class="gal-toggle" id="galToggle" type="button" aria-pressed="false" title="Shared image-chain gallery">
+      <span class="gal-mark" aria-hidden="true">⛓</span><span data-i18n="gal.enter">GALLERY</span>
+    </button>
     <button class="lang-toggle" id="langToggle" title="切换语言 / Toggle language" aria-label="Toggle language">中文</button>
   </div>
 
@@ -3532,6 +3600,12 @@ body[data-mode="decode"] .rail-pulse {
         <input type="file" id="ipfsScanImgInput" accept="image/*" hidden>
         <a class="ipfs-help" href="https://app.pinata.cloud/developers/api-keys" target="_blank" rel="noopener" data-i18n="ipfs.get">get one ↗</a>
       </div>
+      <!-- Opt-in: tag the pin so it shows up as a block in the shared GALLERY chain. -->
+      <div class="gal-pub-bar">
+        <label class="gal-pub-check"><input type="checkbox" id="galPublish"><span data-i18n="gal.publish">⛓ Publish to gallery</span></label>
+        <input type="text" id="galPubTitle" data-i18n-attr="placeholder:gal.titlePh" placeholder="title (e.g. Roze #07)" maxlength="60" autocomplete="off">
+        <input type="text" id="galPubAuthor" data-i18n-attr="placeholder:gal.authorPh" placeholder="your handle" maxlength="30" autocomplete="off">
+      </div>
       <div class="ms-cam" id="ipfsScanCam"><video id="ipfsScanVideo" playsinline muted></video></div>
       <div class="seal-list" id="encSealList"></div>
       <div class="btn-row" style="margin-top: 14px;">
@@ -3673,6 +3747,26 @@ body[data-mode="decode"] .rail-pulse {
         <div class="qrtool-len" id="qrToolLen"></div>
       </div>
     </div>
+  </section>
+
+  <!-- ===== GALLERY VIEW — a shared, hash-linked "image-chain" of published
+       encrypted art. Source: Pinata pinList (one shared gallery account),
+       filtered by the keyvalue tag gallery=hikali. Rendered as a chain of
+       blocks, each hash-linking to the previous (tamper-evident, client-side).
+       Files stay encrypted → blocks are LOCKED tiles (title + QR + Breach). ===== -->
+  <section class="gallery-view" id="galleryView" aria-hidden="true">
+    <div class="gal-head">
+      <div class="gal-title">⛓ BLACKSITE LEDGER <span class="sep">//</span> <span data-i18n="gal.subtitle">IMAGE-CHAIN</span></div>
+      <div class="gal-sub" data-i18n="gal.tagline">append-only · hash-linked · every block is a sealed vault</div>
+    </div>
+    <div class="gal-bar">
+      <input type="password" id="galToken" data-i18n-attr="placeholder:gal.tokenPh" placeholder="shared gallery Pinata JWT — to read & publish the chain" autocomplete="off" spellcheck="false">
+      <button class="forge-btn" id="galSync" type="button">⟳ <span data-i18n="gal.sync">SYNC CHAIN</span></button>
+      <a class="ipfs-help" href="https://app.pinata.cloud/developers/api-keys" target="_blank" rel="noopener" data-i18n="ipfs.get">get one ↗</a>
+      <span class="gal-status" id="galStatus"></span>
+    </div>
+    <div class="gal-chain" id="galChain"></div>
+    <div class="gal-empty" id="galEmpty" data-i18n="gal.empty">// no blocks yet — publish one from the SEAL tab (✓ Publish to gallery), then SYNC.</div>
   </section>
 
   <footer class="transmit">
@@ -3846,6 +3940,20 @@ const I18N = {
     'toast.cardSaved':   'Key card downloaded. Keep it offline.',
     'mil.banner':   'CLASSIFIED // MIL-SPEC // ARGON2ID-64MB // EYES ONLY',
     'mil.enter':    'MIL-SPEC',
+    'gal.enter':    'GALLERY',
+    'gal.subtitle': 'IMAGE-CHAIN',
+    'gal.tagline':  'append-only · hash-linked · every block is a sealed vault',
+    'gal.tokenPh':  'shared gallery Pinata JWT — to read & publish the chain',
+    'gal.sync':     'SYNC CHAIN',
+    'gal.empty':    '// no blocks yet — publish one from the SEAL tab (✓ Publish to gallery), then SYNC.',
+    'gal.publish':  '⛓ Publish to gallery',
+    'gal.titlePh':  'title (e.g. Roze #07)',
+    'gal.authorPh': 'your handle',
+    'gal.needToken':'paste the shared gallery JWT first',
+    'gal.syncing':  'syncing chain…',
+    'gal.synced':   (n) => `chain synced · ${n} block${n === 1 ? '' : 's'}`,
+    'gal.breach':   '→ BREACH',
+    'gal.opened':   'loaded into Breach — fetching…',
     'btn.seal':     'Engage Seal',
     'btn.reset':    'Reset',
     'sealed.label': '// Sealed Transmissions',
@@ -3991,6 +4099,20 @@ const I18N = {
     'toast.cardSaved':   '密钥卡已下载，请离线保管。',
     'mil.banner':   '机密 // 军规模式 // ARGON2ID-64MB // 仅限授权',
     'mil.enter':    '军规模式',
+    'gal.enter':    '图库',
+    'gal.subtitle': '图链',
+    'gal.tagline':  '只增不改 · 哈希相连 · 每一块都是封印的保险库',
+    'gal.tokenPh':  '共享图库的 Pinata JWT —— 用于读取和发布图链',
+    'gal.sync':     '同步图链',
+    'gal.empty':    '// 还没有区块 —— 在 SEAL 标签勾选「⛓ 发布到图库」发布一个，然后同步。',
+    'gal.publish':  '⛓ 发布到图库',
+    'gal.titlePh':  '标题（如 Roze #07）',
+    'gal.authorPh': '你的代号',
+    'gal.needToken':'请先粘贴共享图库 JWT',
+    'gal.syncing':  '正在同步图链…',
+    'gal.synced':   (n) => `图链已同步 · ${n} 个区块`,
+    'gal.breach':   '→ 破封',
+    'gal.opened':   '已载入破封 —— 正在取回…',
     'btn.seal':     '执行封印',
     'btn.reset':    '重置',
     'sealed.label': '// 封印输出',
@@ -4155,6 +4277,7 @@ const QR_CHANNELS = {
   words:  { ink: '#22e6ff', bg: '#021a1e' },   // 🔵 cyan   → last-6 word slots
   link:   { ink: '#ff5cb0', bg: '#1a0512' },   // 🟣 magenta→ Fetch field / file links
 };
+const GALLERY_TAG = 'hikali';   // Pinata keyvalue that marks a pin as a gallery block
 
 function setAceMode(key, opts = {}) {
   const cfg = ACE_MODES[key];
@@ -5567,7 +5690,7 @@ $('#btnPinBundle')?.addEventListener('click', async () => {
   try {
     const bundle = JSON.stringify(ok.map(p => ({ filename: p.filename, cipher: p.b64 })), null, 2);
     const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const cid = await pinToIpfs(bundle, `skystriker-bundle-${ts}-${ok.length}files.json`);
+    const cid = await pinToIpfs(bundle, `skystriker-bundle-${ts}-${ok.length}files.json`, galPubMeta(`bundle · ${ok.length} files`));
     const url = IPFS_GATEWAYS[0] + cid;
     const host = $('#bundlePinResult');
     let link = host.querySelector('a');
@@ -5783,12 +5906,16 @@ function setIpfsToken(v) {
   const inp = $('#ipfsToken'); if (inp) inp.value = v;
   try { localStorage.setItem('pinata-jwt', v); } catch {}
 }
-async function pinToIpfs(b64, filename) {
+async function pinToIpfs(b64, filename, meta) {
   const jwt = ipfsToken();
   if (!jwt) throw new Error(t('toast.ipfsNoToken'));
   const fd = new FormData();
   fd.append('file', new Blob([b64], { type: 'text/plain' }), filename || 'transmission.ssae.txt');
-  fd.append('pinataMetadata', JSON.stringify({ name: filename || 'skystriker.ssae.txt' }));
+  // When publishing to the gallery, tag the pin with keyvalues so the chain can
+  // find it via Pinata pinList (gallery=GALLERY_TAG, plus title/author).
+  const pmeta = { name: filename || 'skystriker.ssae.txt' };
+  if (meta && meta.gallery) pmeta.keyvalues = { gallery: GALLERY_TAG, title: (meta.title || filename || 'untitled').slice(0, 60), author: (meta.author || 'anon').slice(0, 30) };
+  fd.append('pinataMetadata', JSON.stringify(pmeta));
   const resp = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS',
     { method: 'POST', headers: { Authorization: 'Bearer ' + jwt }, body: fd });
   if (resp.status === 401 || resp.status === 403) throw new Error(t('toast.ipfsBadToken'));
@@ -5797,12 +5924,20 @@ async function pinToIpfs(b64, filename) {
   if (!j.IpfsHash) throw new Error('Pinata returned no CID.');
   return j.IpfsHash;
 }
+// If "Publish to gallery" is ticked, return the metadata that tags the pin as a
+// gallery block; otherwise null (a normal private pin).
+function galPubMeta(defaultTitle) {
+  if (!$('#galPublish')?.checked) return null;
+  return { gallery: true,
+           title: (($('#galPubTitle')?.value || '').trim() || defaultTitle || 'untitled'),
+           author: (($('#galPubAuthor')?.value || '').trim() || 'anon') };
+}
 async function pinSealed(r, btn, row) {
   const old = btn.textContent;
   btn.disabled = true; btn.textContent = 'pinning'; btn.classList.add('pinning');
   const pbar = $('#encProgress'); pbar?.classList.remove('hidden'); pbar?.classList.add('indet');
   try {
-    const cid = await pinToIpfs(r.b64, r.filename + '.ssae.txt');
+    const cid = await pinToIpfs(r.b64, r.filename + '.ssae.txt', galPubMeta(r.filename));
     const url = IPFS_GATEWAYS[0] + cid;
     let link = row.querySelector('.seal-ipfs');
     if (!link) { link = makeEl('a', { cls: 'seal-ipfs', attrs: { href: '#' } }); row.querySelector('.seal-info').appendChild(link); }
@@ -5882,6 +6017,95 @@ $('#encWordsCam')?.addEventListener('click', () => startQrCamera('#encWordsVideo
 $('#decWordsCam')?.addEventListener('click', () => startQrCamera('#decWordsVideo', '#decWordsCamView', (txt) => importWordsToGrid('decCipher', txt)));
 $('#encWordsImgInput')?.addEventListener('change', (e) => { const f = e.target.files?.[0]; if (f) scanQrImage(f, (txt) => importWordsToGrid('encCipher', txt)); e.target.value = ''; });
 $('#decWordsImgInput')?.addEventListener('change', (e) => { const f = e.target.files?.[0]; if (f) scanQrImage(f, (txt) => importWordsToGrid('decCipher', txt)); e.target.value = ''; });
+
+/* ====== GALLERY — a shared, hash-linked image-chain backed by Pinata ======
+   Source of truth = Pinata's pinList for the shared gallery account, filtered by
+   keyvalue gallery=GALLERY_TAG. Each pin becomes a block; we sort by pin time and
+   compute a SHA-256 chain (block N hashes its index + prevHash + cid + meta), so
+   the list is tamper-evident — change any earlier block and every later hash
+   breaks. Files stay encrypted, so blocks are LOCKED tiles: title + QR + Breach. */
+function escapeHtml(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function galToken(){ return ($('#galToken')?.value || ipfsToken() || '').trim(); }
+(function initGalToken(){
+  const g = $('#galToken'); if (!g) return;
+  try { g.value = localStorage.getItem('pinata-jwt') || ''; } catch {}
+  g.addEventListener('input', () => setIpfsToken(g.value));   // one shared account = one token
+})();
+async function sha256hex(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+let galleryOn = false;
+function setGalleryView(on){
+  galleryOn = on;
+  document.body.classList.toggle('gallery-on', on);
+  const tg = $('#galToggle'); if (tg){ tg.classList.toggle('active', on); tg.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+  $('#galleryView')?.setAttribute('aria-hidden', on ? 'false' : 'true');
+  if (on) loadGallery();
+}
+$('#galToggle')?.addEventListener('click', () => setGalleryView(!galleryOn));
+$('#galSync')?.addEventListener('click', loadGallery);
+
+async function loadGallery(){
+  const jwt = galToken();
+  const status = $('#galStatus'), chain = $('#galChain'), empty = $('#galEmpty');
+  if (!jwt){ status.textContent = t('gal.needToken'); status.className = 'gal-status err'; empty.style.display = 'block'; chain.innerHTML = ''; return; }
+  status.textContent = t('gal.syncing'); status.className = 'gal-status busy';
+  let rows;
+  try {
+    const q = 'https://api.pinata.cloud/data/pinList?status=pinned&pageLimit=200&metadata[keyvalues]='
+      + encodeURIComponent(JSON.stringify({ gallery: { value: GALLERY_TAG, op: 'eq' } }));
+    const resp = await fetch(q, { headers: { Authorization: 'Bearer ' + jwt } });
+    if (resp.status === 401 || resp.status === 403){ status.textContent = t('toast.ipfsBadToken'); status.className = 'gal-status err'; return; }
+    if (!resp.ok) throw new Error('Pinata ' + resp.status);
+    rows = (await resp.json()).rows || [];
+  } catch (e){ status.textContent = (e.message || 'sync failed'); status.className = 'gal-status err'; return; }
+  rows.sort((a, b) => new Date(a.date_pinned) - new Date(b.date_pinned));   // genesis first
+  let prev = '000000000000';
+  const blocks = [];
+  for (let i = 0; i < rows.length; i++){
+    const r = rows[i], kv = (r.metadata && r.metadata.keyvalues) || {};
+    const cid = r.ipfs_pin_hash;
+    const hash = (await sha256hex(i + '|' + prev + '|' + cid + '|' + (kv.title || '') + '|' + (kv.author || '') + '|' + r.date_pinned)).slice(0, 12);
+    blocks.push({ i, cid, title: kv.title || 'untitled', author: kv.author || 'anon', date: r.date_pinned, hash, prev });
+    prev = hash;
+  }
+  renderGallery(blocks);
+  status.textContent = t('gal.synced', blocks.length); status.className = 'gal-status ok';
+  empty.style.display = blocks.length ? 'none' : 'block';
+}
+function renderGallery(blocks){
+  const chain = $('#galChain'); chain.innerHTML = '';
+  for (let k = blocks.length - 1; k >= 0; k--){   // newest on top
+    const b = blocks[k], genesis = b.i === 0, url = IPFS_GATEWAYS[0] + b.cid;
+    const node = makeEl('div', { cls: 'gal-block' + (genesis ? ' genesis' : '') });
+    node.innerHTML =
+      '<div class="gb-head"><span class="gb-idx">#' + String(b.i).padStart(3, '0') + '</span>'
+      + '<span class="gb-hash" title="block hash">⛓ ' + b.hash + '</span>'
+      + '<span class="gb-prev" title="links to previous block">↳ ' + (genesis ? 'GENESIS' : b.prev) + '</span></div>'
+      + '<div class="gb-body"><div class="gb-meta">'
+      + '<div class="gb-title">' + escapeHtml(b.title) + '</div>'
+      + '<div class="gb-by">by ' + escapeHtml(b.author) + ' · ' + new Date(b.date).toLocaleString() + '</div>'
+      + '<div class="gb-cid">' + escapeHtml(b.cid.slice(0, 20)) + '…</div>'
+      + '<div class="gb-actions"></div></div><div class="gb-qr"></div></div>';
+    const c = qrInkFor('link');
+    renderLinkQr(node.querySelector('.gb-qr'), url, 104, c.ink, c.bg, 'gallery-' + b.cid.slice(0, 8) + '.png');
+    const acts = node.querySelector('.gb-actions');
+    const bb = makeEl('button', { cls: 'mini-btn', text: t('gal.breach') });
+    bb.addEventListener('click', () => breachFromGallery(url));
+    const cp = makeEl('button', { cls: 'mini-btn', text: t('mini.copy') });
+    cp.addEventListener('click', () => { navigator.clipboard?.writeText(url); toast(t('toast.ipfsCopied'), 'ok', 'copy'); });
+    acts.appendChild(bb); acts.appendChild(cp);
+    chain.appendChild(node);
+  }
+}
+function breachFromGallery(url){
+  setGalleryView(false);
+  document.querySelector('.tab-btn[data-tab="decode"]')?.click();
+  const f = $('#decUrl'); if (f) f.value = url;
+  toast(t('gal.opened'), 'ok', 'fetch');
+  $('#btnFetchUrl')?.click();
+}
 
 async function fetchCipherFromUrl(rawInput) {
   const trimmed = rawInput.trim();
