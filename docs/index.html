@@ -435,6 +435,23 @@ body.gallery-on .gallery-view { display: block; animation: galIn .3s ease both; 
 .gb-cid { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--red-deep); margin-top: 5px; word-break: break-all; }
 .gb-actions { display: flex; gap: 8px; margin-top: 10px; }
 .gb-qr { flex: 0 0 auto; }
+/* Block action buttons — terminal-styled (reset default white/black chrome). */
+.gb-act {
+  -webkit-appearance: none; appearance: none;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase; padding: 7px 14px;
+  cursor: pointer; border-radius: 2px;
+  transition: background .15s, color .15s, box-shadow .15s, transform .1s;
+}
+.gb-breach {
+  color: var(--red); border: 1px solid var(--red);
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent);
+  text-shadow: 0 0 8px var(--shadow-r);
+}
+.gb-breach:hover { color: var(--void); background: var(--red); box-shadow: 0 0 16px var(--shadow-r); transform: translateY(-1px); text-shadow: none; }
+.gb-breach:active { transform: translateY(0); }
+.gb-copy { color: var(--ash); border: 1px solid var(--strut); background: rgba(0,0,0,0.28); }
+.gb-copy:hover { color: var(--bone); border-color: var(--ash); box-shadow: inset 0 0 10px rgba(0,0,0,0.4); }
 
 /* Publish-to-gallery controls in the seal IPFS bar. */
 .gal-pub-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 14px; }
@@ -3761,10 +3778,14 @@ body[data-mode="decode"] .rail-pulse {
     </div>
     <div class="gal-bar">
       <input type="password" id="galToken" data-i18n-attr="placeholder:gal.tokenPh" placeholder="shared gallery Pinata JWT — to read & publish the chain" autocomplete="off" spellcheck="false">
+      <button class="forge-btn" id="galTokenCam" type="button" title="Scan token QR (camera)">📷</button>
+      <label class="forge-btn" for="galTokenImgInput" title="Scan token QR (image)">🖼</label>
+      <input type="file" id="galTokenImgInput" accept="image/*" hidden>
       <button class="forge-btn" id="galSync" type="button">⟳ <span data-i18n="gal.sync">SYNC CHAIN</span></button>
       <a class="ipfs-help" href="https://app.pinata.cloud/developers/api-keys" target="_blank" rel="noopener" data-i18n="ipfs.get">get one ↗</a>
       <span class="gal-status" id="galStatus"></span>
     </div>
+    <div class="ms-cam" id="galTokenCamView"><video id="galTokenVideo" playsinline muted></video></div>
     <div class="gal-chain" id="galChain"></div>
     <div class="gal-empty" id="galEmpty" data-i18n="gal.empty">// no blocks yet — publish one from the SEAL tab (✓ Publish to gallery), then SYNC.</div>
   </section>
@@ -3953,6 +3974,7 @@ const I18N = {
     'gal.syncing':  'syncing chain…',
     'gal.synced':   (n) => `chain synced · ${n} block${n === 1 ? '' : 's'}`,
     'gal.breach':   '→ BREACH',
+    'gal.copylink': '⎘ LINK',
     'gal.opened':   'loaded into Breach — fetching…',
     'btn.seal':     'Engage Seal',
     'btn.reset':    'Reset',
@@ -4112,6 +4134,7 @@ const I18N = {
     'gal.syncing':  '正在同步图链…',
     'gal.synced':   (n) => `图链已同步 · ${n} 个区块`,
     'gal.breach':   '→ 破封',
+    'gal.copylink': '⎘ 链接',
     'gal.opened':   '已载入破封 —— 正在取回…',
     'btn.seal':     '执行封印',
     'btn.reset':    '重置',
@@ -5904,6 +5927,7 @@ function ipfsToken() { return ($('#ipfsToken')?.value || localStorage.getItem('p
 function setIpfsToken(v) {
   v = (v || '').trim();
   const inp = $('#ipfsToken'); if (inp) inp.value = v;
+  const gal = $('#galToken'); if (gal) gal.value = v;   // keep the gallery field in sync (one shared account)
   try { localStorage.setItem('pinata-jwt', v); } catch {}
 }
 async function pinToIpfs(b64, filename, meta) {
@@ -6045,6 +6069,14 @@ function setGalleryView(on){
 }
 $('#galToggle')?.addEventListener('click', () => setGalleryView(!galleryOn));
 $('#galSync')?.addEventListener('click', loadGallery);
+// Gallery JWT can be scanned as a QR too (camera/image), like the seal-side token.
+$('#galTokenCam')?.addEventListener('click', () => startQrCamera('#galTokenVideo', '#galTokenCamView',
+  (text) => { setIpfsToken(text); toast(t('toast.ipfsTokenScanned'), 'ok', 'extracted'); return true; }));
+$('#galTokenImgInput')?.addEventListener('change', (e) => {
+  const f = e.target.files?.[0];
+  if (f) scanQrImage(f, (text) => { setIpfsToken(text); toast(t('toast.ipfsTokenScanned'), 'ok', 'extracted'); });
+  e.target.value = '';
+});
 
 async function loadGallery(){
   const jwt = galToken();
@@ -6091,9 +6123,9 @@ function renderGallery(blocks){
     const c = qrInkFor('link');
     renderLinkQr(node.querySelector('.gb-qr'), url, 104, c.ink, c.bg, 'gallery-' + b.cid.slice(0, 8) + '.png');
     const acts = node.querySelector('.gb-actions');
-    const bb = makeEl('button', { cls: 'mini-btn', text: t('gal.breach') });
+    const bb = makeEl('button', { cls: 'gb-act gb-breach', text: t('gal.breach') });
     bb.addEventListener('click', () => breachFromGallery(url));
-    const cp = makeEl('button', { cls: 'mini-btn', text: t('mini.copy') });
+    const cp = makeEl('button', { cls: 'gb-act gb-copy', text: t('gal.copylink') });
     cp.addEventListener('click', () => { navigator.clipboard?.writeText(url); toast(t('toast.ipfsCopied'), 'ok', 'copy'); });
     acts.appendChild(bb); acts.appendChild(cp);
     chain.appendChild(node);
