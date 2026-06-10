@@ -4726,7 +4726,7 @@ function qrInkFor(channel) {
 }
 // Draw a QR of a link into hostEl (reused on re-render). Optional ink/bg override
 // for channel colour-coding; defaults to the active theme colour.
-function renderLinkQr(hostEl, text, px, ink, bg) {
+function renderLinkQr(hostEl, text, px, ink, bg, filename) {
   if (!hostEl) return;
   let cv = hostEl.querySelector('canvas.link-qr');
   if (!cv) { cv = makeEl('canvas', { cls: 'link-qr' }); hostEl.appendChild(cv); }
@@ -4734,6 +4734,11 @@ function renderLinkQr(hostEl, text, px, ink, bg) {
   drawQrCanvas(cv, text, 4, 3, c.ink, c.bg);
   cv.style.width = (px || 120) + 'px';
   cv.style.height = (px || 120) + 'px';
+  // Tap to save — a <canvas> can't be long-pressed to save on mobile, so wire a
+  // download. (Also shows a hint + pointer cursor.)
+  cv.style.cursor = 'pointer';
+  cv.title = t('words.saveHint');
+  cv.onclick = () => cv.toBlob((b) => downloadBlob(b, filename || ('skystriker-qr-' + Date.now() + '.png')), 'image/png');
 }
 
 /* --- minimal single-page PDF: ASCII text + filled rects, no library --- */
@@ -4804,6 +4809,8 @@ function updateMilPackageUI() {
     let cv = host.querySelector('canvas');
     if (!cv) { cv = document.createElement('canvas'); host.appendChild(cv); }
     { const c = qrInkFor('pepper'); drawQrCanvas(cv, milQrText(), 4, 4, c.ink, c.bg); }
+    cv.style.cursor = 'pointer'; cv.title = t('words.saveHint');   // tap to save (canvas can't be long-pressed)
+    cv.onclick = () => cv.toBlob((b) => downloadBlob(b, 'skystriker-pepper-qr.png'), 'image/png');
   }
   const pep = $('#mpPepper'); if (pep) pep.textContent = milPepper;
 }
@@ -5554,7 +5561,7 @@ $('#btnPinBundle')?.addEventListener('click', async () => {
     link.textContent = `⛓ bundle ▸ ${cid.slice(0, 14)}…  (copy link · ${ok.length} files)`;
     link.href = url; link.title = url;
     link.onclick = (e) => { e.preventDefault(); navigator.clipboard?.writeText(url); toast(t('toast.ipfsCopied'), 'ok', 'copy'); };
-    { const c = qrInkFor('link'); renderLinkQr(host, url, 150, c.ink, c.bg); }   // auto QR for the bundle link (magenta = file channel)
+    { const c = qrInkFor('link'); renderLinkQr(host, url, 150, c.ink, c.bg, 'skystriker-bundle-' + cid.slice(0, 10) + '.png'); }   // auto QR for the bundle link (magenta), tap to save
     btn.textContent = '✓ pinned';
     toast(t('toast.ipfsPinned', cid.slice(0, 12)), 'ok', 'fetch');
   } catch (e) {
@@ -5788,7 +5795,7 @@ async function pinSealed(r, btn, row) {
     link.textContent = '⛓ ipfs ▸ ' + cid.slice(0, 12) + '…  (copy link)';
     link.href = url; link.title = url;
     link.onclick = (e) => { e.preventDefault(); navigator.clipboard?.writeText(url); toast(t('toast.ipfsCopied'), 'ok', 'copy'); };
-    { const c = qrInkFor('link'); renderLinkQr(row.querySelector('.seal-info'), url, 96, c.ink, c.bg); }   // auto QR (magenta = file channel)
+    { const c = qrInkFor('link'); renderLinkQr(row.querySelector('.seal-info'), url, 96, c.ink, c.bg, 'skystriker-ipfs-' + cid.slice(0, 10) + '.png'); }   // auto QR (magenta = file channel), tap to save
     btn.textContent = '✓ ipfs';
     toast(t('toast.ipfsPinned', cid.slice(0, 12)), 'ok', 'fetch');
   } catch (e) {
@@ -5833,9 +5840,7 @@ function exportWordsQr(gridId, hostId) {
   if (last6.length < 6 || last6.some(w => !w)) return toast(t('toast.wordsNeedExport'), 'err', 'abort');
   const host = $('#' + hostId);
   const c = qrInkFor('words');
-  renderLinkQr(host, WORDS_QR_PREFIX + last6.join(' '), 132, c.ink, c.bg);
-  const cv = host.querySelector('canvas');
-  if (cv) { cv.style.cursor = 'pointer'; cv.title = t('words.saveHint'); cv.onclick = () => cv.toBlob((b) => downloadBlob(b, 'skystriker-words-last6-qr.png'), 'image/png'); }
+  renderLinkQr(host, WORDS_QR_PREFIX + last6.join(' '), 132, c.ink, c.bg, 'skystriker-words-last6-qr.png');
   toast(t('toast.wordsExported'), 'ok', 'copy');
 }
 function importWordsToGrid(gridId, text) {
