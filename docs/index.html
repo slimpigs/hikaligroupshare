@@ -107,15 +107,15 @@
   content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 60;
   mix-blend-mode: overlay; opacity: 0.5;
   background:
-    repeating-linear-gradient(0deg, rgba(255,176,0,0.05) 0 1px, transparent 1px 3px),
-    radial-gradient(ellipse at 50% -10%, rgba(255,176,0,0.10), transparent 55%);
+    repeating-linear-gradient(0deg, rgba(0,255,102,0.05) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% -10%, rgba(0,255,102,0.10), transparent 55%);
 }
 
 /* Classification banner — hidden outside MIL-SPEC */
 .mil-banner {
   display: none; align-items: center; justify-content: center; gap: 12px;
   margin: 2px 0 16px; padding: 8px 16px; position: relative; overflow: hidden;
-  background: linear-gradient(180deg, rgba(255,176,0,0.06), rgba(255,176,0,0.02));
+  background: linear-gradient(180deg, rgba(0,255,102,0.06), rgba(0,255,102,0.02));
   border: 1px solid var(--red-deep); border-left: 3px solid var(--red); border-right: 3px solid var(--red);
   font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
   letter-spacing: 0.3em; text-transform: uppercase; color: var(--red);
@@ -125,7 +125,7 @@
 .mil-banner .mb-bracket { color: var(--ember-glow); animation: milPulse 1.6s ease-in-out infinite; }
 .mil-banner::before {
   content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: repeating-linear-gradient(45deg, transparent 0 11px, rgba(255,176,0,0.05) 11px 22px);
+  background: repeating-linear-gradient(45deg, transparent 0 11px, rgba(0,255,102,0.05) 11px 22px);
   animation: milSlide 9s linear infinite;
 }
 @keyframes milPulse { 50% { opacity: 0.35; } }
@@ -165,7 +165,7 @@
   padding: 14px;
   margin-bottom: 18px;
   background:
-    linear-gradient(180deg, rgba(255,176,0,0.03), rgba(0,0,0,0.25)),
+    linear-gradient(180deg, rgba(0,255,102,0.03), rgba(0,0,0,0.25)),
     var(--void);
   border: 1px solid var(--red-deep);
   position: relative;
@@ -185,12 +185,12 @@
 
 /* Each slot = a hardened key segment with hex address + ARMED indicator. */
 [data-theme="mil"] .cipher-slot input {
-  background: linear-gradient(180deg, #11140d, #0a0c07);
-  border: 1px solid #3a2c08;
+  background: linear-gradient(180deg, #0a160d, #0a0c07);
+  border: 1px solid #16432a;
   color: var(--ember);
   font-size: 13px; letter-spacing: 0.08em;
   padding: 20px 8px 11px;
-  box-shadow: inset 0 1px 0 rgba(255,176,0,0.06), inset 0 0 14px rgba(0,0,0,0.6);
+  box-shadow: inset 0 1px 0 rgba(0,255,102,0.06), inset 0 0 14px rgba(0,0,0,0.6);
   clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
   transition: border-color .15s, box-shadow .15s, color .15s, background .15s;
 }
@@ -203,13 +203,13 @@
 [data-theme="mil"] .slot-armed {
   position: absolute; top: 7px; right: 8px;
   width: 6px; height: 6px; border-radius: 50%;
-  background: #2a2208; box-shadow: inset 0 0 0 1px #3a2c08;
+  background: #0a2a16; box-shadow: inset 0 0 0 1px #16432a;
   transition: background .2s, box-shadow .2s;
 }
 [data-theme="mil"] .cipher-slot input:focus {
   border-color: var(--red);
-  background: linear-gradient(180deg, #161a0d, #0d0f08);
-  box-shadow: inset 0 0 14px rgba(0,0,0,0.6), 0 0 13px rgba(255,176,0,0.4);
+  background: linear-gradient(180deg, #0c1a10, #0d0f08);
+  box-shadow: inset 0 0 14px rgba(0,0,0,0.6), 0 0 13px rgba(0,255,102,0.4);
 }
 [data-theme="mil"] .cipher-slot input:not(:placeholder-shown) {
   color: var(--ember-glow);
@@ -236,10 +236,10 @@
 .ks-bar {
   display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px;
   height: 14px; padding: 3px;
-  background: #0a0c07; border: 1px solid #3a2c08;
+  background: #0a0c07; border: 1px solid #16432a;
   clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
 }
-.ks-seg { background: #1c1705; transition: background .25s, box-shadow .25s; }
+.ks-seg { background: #0a2010; transition: background .25s, box-shadow .25s; }
 .ks-seg.lit { background: var(--red); box-shadow: 0 0 6px var(--shadow-r); }
 /* Color tiers driven by assessKeyStrength()'s `level` (0..4). */
 .ks-bar[data-level="1"] .ks-seg.lit { background: #c23b2e; box-shadow: 0 0 6px rgba(194,59,46,0.6); }
@@ -350,7 +350,33 @@
 .seal-ipfs { display: inline-block; margin-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--red); text-decoration: none; letter-spacing: 0.03em; cursor: pointer; }
 .seal-ipfs:hover { text-decoration: underline; text-shadow: 0 0 8px var(--shadow-r); }
 .link-qr { display: block; margin-top: 8px; image-rendering: pixelated; border: 1px solid var(--red-deep); padding: 5px; background: var(--void); box-shadow: 0 0 14px var(--shadow-r); }
+/* WORDS ▸ QR controls — MIL-SPEC only. The QR carries only the LAST 6 words;
+   the first 6 are typed from memory, so the QR alone can't open anything. */
+.words-qr-row, .words-qr-out { display: none; }
+[data-theme="mil"] .words-qr-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 2px 0 14px; }
+[data-theme="mil"] .words-qr-out:not(:empty) { display: block; }
+.words-qr-row .wq-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.18em; color: var(--ash); text-transform: uppercase; white-space: nowrap; }
+.words-qr-out { margin: 0 0 12px; }
+.words-qr-out:empty { display: none; }
 #bundlePinResult { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin-top: 12px; }
+
+/* === MIL CHANNEL COLOUR-CODING — each input box matches its QR ===
+   PEPPER box = green (theme default) · last-6 word slots = cyan · Fetch/link = magenta. */
+/* Cyan: the LAST 6 word slots (filled by the words QR). First 6 stay green. */
+[data-theme="mil"] .cipher-slot:nth-child(n+7) input { border-color: #1c5e6b; color: #aef3ff; }
+[data-theme="mil"] .cipher-slot:nth-child(n+7) .slot-idx { color: #1f8c9c; }
+[data-theme="mil"] .cipher-slot:nth-child(n+7) input:focus { border-color: #22e6ff; box-shadow: inset 0 0 14px rgba(0,0,0,0.6), 0 0 13px rgba(34,230,255,0.45); }
+[data-theme="mil"] .cipher-slot:nth-child(n+7) input:not(:placeholder-shown) { color: #c4f7ff; border-color: #22e6ff; text-shadow: 0 0 8px rgba(34,230,255,0.5); }
+[data-theme="mil"] .cipher-slot:nth-child(n+7) input:not(:placeholder-shown) + .slot-armed { background: #22e6ff; box-shadow: 0 0 8px rgba(34,230,255,0.6), 0 0 2px #fff inset; }
+/* A tiny "scan-fills-these" hint marker on the first last-6 slot. */
+[data-theme="mil"] .cipher-slot:nth-child(7) .slot-idx::after { content: ' ◂qr'; color: #1f8c9c; font-size: 7px; }
+/* Magenta: the Fetch field + the LINK ▸ QR tool card (file/link channel). */
+[data-theme="mil"] .url-row input { border-color: #7a2a55; }
+[data-theme="mil"] .url-row input:focus { border-color: #ff5cb0; box-shadow: 0 0 10px rgba(255,92,176,0.4); }
+[data-theme="mil"] .url-qr .uq-label { color: #c76a9c; }
+[data-theme="mil"] .qrtool-card { border-color: #ff5cb0; box-shadow: 0 0 28px rgba(255,92,176,0.3), inset 0 0 30px rgba(0,0,0,0.5); }
+[data-theme="mil"] .qrtool-card::before, [data-theme="mil"] .qrtool-card::after { border-color: #ff5cb0; filter: drop-shadow(0 0 4px rgba(255,92,176,0.5)); }
+[data-theme="mil"] .qrtool-cap { color: #ff5cb0; text-shadow: 0 0 10px rgba(255,92,176,0.5); }
 
 /* LINK ▸ QR utility — clean QR on a white card inside a themed reticle frame. */
 .qrtool-stage { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-top: 22px; }
@@ -377,9 +403,9 @@
 
 /* Richer classified banner: hazard ends + a live control code on the right. */
 [data-theme="mil"] .mil-banner {
-  background: linear-gradient(180deg, rgba(255,176,0,0.10), rgba(255,176,0,0.02));
+  background: linear-gradient(180deg, rgba(0,255,102,0.10), rgba(0,255,102,0.02));
   border-top: 1px solid var(--red); border-bottom: 1px solid var(--red);
-  box-shadow: 0 0 22px rgba(255,176,0,0.10), inset 0 0 30px rgba(255,176,0,0.04);
+  box-shadow: 0 0 22px rgba(0,255,102,0.10), inset 0 0 30px rgba(0,255,102,0.04);
 }
 
 /* ============================================================
@@ -410,14 +436,14 @@
 [data-theme="mil"] .sweep { display: none; }
 [data-theme="mil"] body::before {
   background:
-    radial-gradient(ellipse at 50% -5%, rgba(255,176,0,0.12), transparent 55%),
-    radial-gradient(ellipse at 50% 110%, rgba(255,176,0,0.05), transparent 60%),
+    radial-gradient(ellipse at 50% -5%, rgba(0,255,102,0.12), transparent 55%),
+    radial-gradient(ellipse at 50% 110%, rgba(0,255,102,0.05), transparent 60%),
     linear-gradient(180deg, #05060a, #020203 70%, #000);
 }
 [data-theme="mil"] body::after {
   background-image:
-    linear-gradient(90deg, rgba(255,176,0,0.05) 1px, transparent 1px),
-    linear-gradient(0deg,  rgba(255,176,0,0.04) 1px, transparent 1px);
+    linear-gradient(90deg, rgba(0,255,102,0.05) 1px, transparent 1px),
+    linear-gradient(0deg,  rgba(0,255,102,0.04) 1px, transparent 1px);
   background-size: 26px 26px;
   mask-image: radial-gradient(ellipse at 50% 38%, black 35%, transparent 85%);
 }
@@ -436,7 +462,7 @@
   background:
     repeating-linear-gradient(90deg, var(--red) 0 2px, transparent 2px 3px, var(--red) 3px 4px, transparent 4px 7px);
   border: 1px solid var(--red-deep);
-  box-shadow: inset 0 0 0 3px var(--void), 0 0 14px rgba(255,176,0,0.25);
+  box-shadow: inset 0 0 0 3px var(--void), 0 0 14px rgba(0,255,102,0.25);
   clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
 }
 [data-theme="mil"] .brand h1 {
@@ -459,7 +485,7 @@
 [data-theme="mil"] .brand h1 .ace-name {
   color: var(--void) !important; -webkit-text-fill-color: var(--void) !important;
   background: linear-gradient(180deg, var(--ember-glow), var(--red));
-  padding: 1px 8px; letter-spacing: 0.2em; box-shadow: 0 0 12px rgba(255,176,0,0.5);
+  padding: 1px 8px; letter-spacing: 0.2em; box-shadow: 0 0 12px rgba(0,255,102,0.5);
 }
 [data-theme="mil"] .brand .subtitle {
   text-transform: uppercase; letter-spacing: 0.16em; color: var(--ash);
@@ -470,7 +496,7 @@
 /* Status block becomes a stamped authorization readout. */
 [data-theme="mil"] .status-block {
   border: 1px solid var(--red-deep); padding: 9px 13px;
-  background: linear-gradient(180deg, rgba(255,176,0,0.04), rgba(0,0,0,0.3));
+  background: linear-gradient(180deg, rgba(0,255,102,0.04), rgba(0,0,0,0.3));
   clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 9px 100%, 0 calc(100% - 9px));
 }
 [data-theme="mil"] .status-block .row { text-transform: uppercase; letter-spacing: 0.14em; }
@@ -507,9 +533,9 @@
 [data-theme="mil"] .panel {
   border: 1px solid var(--red-deep);
   background:
-    linear-gradient(180deg, rgba(255,176,0,0.025), rgba(0,0,0,0.25)),
-    repeating-linear-gradient(0deg, transparent 0 25px, rgba(255,176,0,0.015) 25px 26px),
-    repeating-linear-gradient(90deg, transparent 0 25px, rgba(255,176,0,0.015) 25px 26px),
+    linear-gradient(180deg, rgba(0,255,102,0.025), rgba(0,0,0,0.25)),
+    repeating-linear-gradient(0deg, transparent 0 25px, rgba(0,255,102,0.015) 25px 26px),
+    repeating-linear-gradient(90deg, transparent 0 25px, rgba(0,255,102,0.015) 25px 26px),
     var(--void);
   border-top: 3px solid var(--red);
   clip-path: none;
@@ -534,13 +560,13 @@
 [data-theme="mil"] .btn {
   text-transform: uppercase; letter-spacing: 0.16em; font-weight: 700;
   border: 1px solid var(--red); color: var(--ember-glow);
-  background: linear-gradient(180deg, rgba(255,176,0,0.10), rgba(0,0,0,0.4));
+  background: linear-gradient(180deg, rgba(0,255,102,0.10), rgba(0,0,0,0.4));
   clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
 }
 [data-theme="mil"] .btn:not(.ghost)::before { content: '> '; color: var(--red); font-weight: 700; }
 [data-theme="mil"] .btn:hover {
-  background: linear-gradient(180deg, rgba(255,176,0,0.22), rgba(0,0,0,0.4));
-  box-shadow: 0 0 16px rgba(255,176,0,0.3);
+  background: linear-gradient(180deg, rgba(0,255,102,0.22), rgba(0,0,0,0.4));
+  box-shadow: 0 0 16px rgba(0,255,102,0.3);
 }
 [data-theme="mil"] .btn.strike {
   border-color: #c23b2e; color: #ffd2cc;
@@ -550,9 +576,9 @@
 
 /* Dropzones + inputs pick up the hardened steel treatment too. */
 [data-theme="mil"] .dropzone {
-  border: 1px dashed var(--red-deep); background: rgba(255,176,0,0.02);
+  border: 1px dashed var(--red-deep); background: rgba(0,255,102,0.02);
 }
-[data-theme="mil"] .dropzone:hover { border-color: var(--red); background: rgba(255,176,0,0.05); }
+[data-theme="mil"] .dropzone:hover { border-color: var(--red); background: rgba(0,255,102,0.05); }
 [data-theme="mil"] .input-cipher,
 [data-theme="mil"] .url-row input {
   border: 1px solid var(--red-deep); background: #0a0c07; color: var(--ember);
@@ -3454,6 +3480,18 @@ body[data-mode="decode"] .rail-pulse {
       <button class="forge-btn" id="btnSaveCard" type="button" title="Download a key card (words + mode)">⭳ <span data-i18n="forge.save">KEY CARD</span></button>
     </div>
 
+    <!-- WORDS ▸ QR: export the cipher words as a QR (share once), or import by scan
+         so you never retype a shared membership key. -->
+    <div class="words-qr-row">
+      <span class="wq-label" data-i18n="words.qr">WORDS ▸ QR</span>
+      <button class="forge-btn" id="encWordsExport" type="button" title="Show / save a QR of these words">📤 <span data-i18n="words.export">EXPORT</span></button>
+      <button class="forge-btn" id="encWordsCam" type="button" title="Import words — camera">📷</button>
+      <label class="forge-btn" for="encWordsImgInput" title="Import words — image">🖼</label>
+      <input type="file" id="encWordsImgInput" accept="image/*" hidden>
+    </div>
+    <div class="words-qr-out" id="encWordsQr"></div>
+    <div class="ms-cam" id="encWordsCamView"><video id="encWordsVideo" playsinline muted></video></div>
+
     <!-- KEY PACKAGE (MIL-SPEC only): random pepper as a scannable QR + cipher card PDF -->
     <div class="mil-package" id="milPackage">
       <div class="mp-head">
@@ -3550,6 +3588,17 @@ body[data-mode="decode"] .rail-pulse {
 
     <div class="section-label" id="decCipherLabel">Cipher Lock :: 6 Word Authorization</div>
     <div class="cipher-grid" id="decCipher"></div>
+
+    <!-- WORDS ▸ QR (breach): import the shared membership words by scanning their QR. -->
+    <div class="words-qr-row">
+      <span class="wq-label" data-i18n="words.qrImport">WORDS ▸ scan to fill</span>
+      <button class="forge-btn" id="decWordsCam" type="button" title="Import words — camera">📷</button>
+      <label class="forge-btn" for="decWordsImgInput" title="Import words — image">🖼</label>
+      <input type="file" id="decWordsImgInput" accept="image/*" hidden>
+      <button class="forge-btn" id="decWordsExport" type="button" title="Show / save a QR of these words">📤 <span data-i18n="words.export">EXPORT</span></button>
+    </div>
+    <div class="words-qr-out" id="decWordsQr"></div>
+    <div class="ms-cam" id="decWordsCamView"><video id="decWordsVideo" playsinline muted></video></div>
 
     <!-- CHECKWORD (MIL-SPEC only) — compare against the sender's before breaching. -->
     <div class="cipher-check" id="decCheckRow">
@@ -3757,6 +3806,15 @@ const I18N = {
     'toast.qrNoCode':      'No QR code detected in that image — use the camera, or a clearer / larger image.',
     'toast.qrNotPepper':   "That QR isn't a pepper key (expected an SSKP1 pepper QR).",
     'toast.qrNotPepperLink':"That's a link/cipher QR — load it with 🖼 IMAGE under Fetch, not the pepper box.",
+    'words.qr':       'WORDS ▸ QR · last 6 only',
+    'words.qrImport': 'last 6 ▸ scan to fill',
+    'words.export':   'EXPORT',
+    'words.saveHint': 'click to save PNG',
+    'toast.wordsExported':   'QR holds the LAST 6 words only — share the first 6 on a different channel.',
+    'toast.wordsImported':   'Filled the last 6 from QR ✓ — now type the first 6 yourself.',
+    'toast.wordsNeedExport': 'Fill all 12 words first (the QR exports the last 6).',
+    'toast.qrNoWords':       'That QR has no words in it.',
+    'toast.qrIsPepperWords': "That's a pepper QR, not a words QR.",
     'toast.pkgSaved':      'Key package saved — QR image + cipher card PDF.',
     'toast.pepperRotated': 'New random pepper — re-download the key package.',
     'toast.noCamera':      'No camera available — upload the QR image or paste the pepper instead.',
@@ -3893,6 +3951,15 @@ const I18N = {
     'toast.qrNoCode':      '图片中未识别到二维码 —— 请用相机，或更清晰／更大的图片。',
     'toast.qrNotPepper':   '这不是 pepper 二维码（需要 SSKP1 开头的 pepper QR）。',
     'toast.qrNotPepperLink':'这是链接／密文二维码 —— 请用 Fetch 下方的 🖼 图片按钮载入，而不是 pepper 框。',
+    'words.qr':       '密码词 ▸ 二维码 · 仅后 6',
+    'words.qrImport': '后 6 ▸ 扫码填入',
+    'words.export':   '导出',
+    'words.saveHint': '点击保存 PNG',
+    'toast.wordsExported':   '二维码只含后 6 个词 —— 前 6 个请通过不同渠道告知。',
+    'toast.wordsImported':   '已从二维码填入后 6 个词 ✓ —— 请自行输入前 6 个。',
+    'toast.wordsNeedExport': '请先填满 12 个词（二维码导出后 6 个）。',
+    'toast.qrNoWords':       '该二维码中没有密码词。',
+    'toast.qrIsPepperWords': '这是 pepper 二维码，不是密码词二维码。',
     'toast.pkgSaved':      '密钥包已保存 —— QR 图片 + 密码卡 PDF。',
     'toast.pepperRotated': '已更换随机 pepper —— 请重新下载密钥包。',
     'toast.noCamera':      '没有可用相机 —— 请上传 QR 图片或粘贴 pepper。',
@@ -4647,14 +4714,24 @@ function themedQrInk() {
     bg:  (cs.getPropertyValue('--void').trim() || '#02160b'),
   };
 }
-// Draw a themed QR of a link into hostEl (reused on re-pin). Used to auto-show a
-// scannable code for IPFS gateway links right after pinning.
-function renderLinkQr(hostEl, text, px) {
+// In MIL-SPEC there are THREE QR channels, each color-coded to the box it fills,
+// so they're never confused. Non-MIL falls back to the theme colour.
+const QR_CHANNELS = {
+  pepper: { ink: '#00ff66', bg: '#02160b' },   // 🟢 green  → PEPPER box
+  words:  { ink: '#22e6ff', bg: '#021a1e' },   // 🔵 cyan   → last-6 word slots
+  link:   { ink: '#ff5cb0', bg: '#1a0512' },   // 🟣 magenta→ Fetch field / file links
+};
+function qrInkFor(channel) {
+  return (currentMode() === 'mil' && QR_CHANNELS[channel]) ? QR_CHANNELS[channel] : themedQrInk();
+}
+// Draw a QR of a link into hostEl (reused on re-render). Optional ink/bg override
+// for channel colour-coding; defaults to the active theme colour.
+function renderLinkQr(hostEl, text, px, ink, bg) {
   if (!hostEl) return;
   let cv = hostEl.querySelector('canvas.link-qr');
   if (!cv) { cv = makeEl('canvas', { cls: 'link-qr' }); hostEl.appendChild(cv); }
-  const { ink, bg } = themedQrInk();
-  drawQrCanvas(cv, text, 4, 3, ink, bg);
+  const c = (ink && bg) ? { ink, bg } : themedQrInk();
+  drawQrCanvas(cv, text, 4, 3, c.ink, c.bg);
   cv.style.width = (px || 120) + 'px';
   cv.style.height = (px || 120) + 'px';
 }
@@ -4713,7 +4790,7 @@ async function downloadKeyPackage() {
   if (words.length !== need) return toast(t('toast.wordsNeed', need), 'err', 'abort');
   ensureMilPepper();
   const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  downloadBlob(await qrPngBlob(milQrText()), 'skystriker-pepper-qr-' + stamp + '.png');
+  { const c = qrInkFor('pepper'); downloadBlob(await qrPngBlob(milQrText(), c.ink, c.bg), 'skystriker-pepper-qr-' + stamp + '.png'); }
   downloadBlob(cipherCardPdfBlob(words), 'skystriker-cipher-card-' + stamp + '.pdf');
   toast(t('toast.pkgSaved'), 'ok', 'save');
 }
@@ -4726,7 +4803,7 @@ function updateMilPackageUI() {
   if (host) {
     let cv = host.querySelector('canvas');
     if (!cv) { cv = document.createElement('canvas'); host.appendChild(cv); }
-    drawQrCanvas(cv, milQrText(), 4, 4, '#00ff66', '#02160b');
+    { const c = qrInkFor('pepper'); drawQrCanvas(cv, milQrText(), 4, 4, c.ink, c.bg); }
   }
   const pep = $('#mpPepper'); if (pep) pep.textContent = milPepper;
 }
@@ -4745,7 +4822,7 @@ function updateQrTool() {
   if (!text) { stage.setAttribute('aria-hidden', 'true'); card.innerHTML = ''; return; }
   let cv = card.querySelector('canvas');
   if (!cv) { cv = document.createElement('canvas'); card.appendChild(cv); }
-  const { ink, bg } = themedQrInk();
+  const { ink, bg } = qrInkFor('link');   // file/link channel → magenta in MIL
   try { drawQrCanvas(cv, text, 6, 4, ink, bg); }
   catch { stage.setAttribute('aria-hidden', 'true'); card.innerHTML = ''; return toast(t('toast.qrTooLong'), 'err', 'abort'); }
   stage.setAttribute('aria-hidden', 'false');
@@ -4755,7 +4832,7 @@ async function qrToolDownload() {
   const text = $('#qrToolInput')?.value.trim();
   if (!text) return toast(t('toast.qrNoText'), 'err', 'abort');
   const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const { ink, bg } = themedQrInk();
+  const { ink, bg } = qrInkFor('link');
   downloadBlob(await qrPngBlob(text, ink, bg), 'skystriker-qr-' + stamp + '.png');
   toast(t('toast.qrSaved'), 'ok', 'save');
 }
@@ -4763,7 +4840,7 @@ async function qrToolCopy() {
   const text = $('#qrToolInput')?.value.trim();
   if (!text) return toast(t('toast.qrNoText'), 'err', 'abort');
   try {
-    const { ink, bg } = themedQrInk();
+    const { ink, bg } = qrInkFor('link');
     const blob = await qrPngBlob(text, ink, bg);
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
     toast(t('toast.qrCopied'), 'ok', 'copy');
@@ -5477,7 +5554,7 @@ $('#btnPinBundle')?.addEventListener('click', async () => {
     link.textContent = `⛓ bundle ▸ ${cid.slice(0, 14)}…  (copy link · ${ok.length} files)`;
     link.href = url; link.title = url;
     link.onclick = (e) => { e.preventDefault(); navigator.clipboard?.writeText(url); toast(t('toast.ipfsCopied'), 'ok', 'copy'); };
-    renderLinkQr(host, url, 150);   // auto QR for the bundle link (the main share artifact)
+    { const c = qrInkFor('link'); renderLinkQr(host, url, 150, c.ink, c.bg); }   // auto QR for the bundle link (magenta = file channel)
     btn.textContent = '✓ pinned';
     toast(t('toast.ipfsPinned', cid.slice(0, 12)), 'ok', 'fetch');
   } catch (e) {
@@ -5711,7 +5788,7 @@ async function pinSealed(r, btn, row) {
     link.textContent = '⛓ ipfs ▸ ' + cid.slice(0, 12) + '…  (copy link)';
     link.href = url; link.title = url;
     link.onclick = (e) => { e.preventDefault(); navigator.clipboard?.writeText(url); toast(t('toast.ipfsCopied'), 'ok', 'copy'); };
-    renderLinkQr(row.querySelector('.seal-info'), url, 96);   // auto QR for the link
+    { const c = qrInkFor('link'); renderLinkQr(row.querySelector('.seal-info'), url, 96, c.ink, c.bg); }   // auto QR (magenta = file channel)
     btn.textContent = '✓ ipfs';
     toast(t('toast.ipfsPinned', cid.slice(0, 12)), 'ok', 'fetch');
   } catch (e) {
@@ -5734,6 +5811,58 @@ $('#ipfsScanImgInput')?.addEventListener('change', (e) => {
   if (f) scanQrImage(f, (text) => { setIpfsToken(text); toast(t('toast.ipfsTokenScanned'), 'ok', 'extracted'); });
   e.target.value = '';
 });
+
+/* ====== WORDS ▸ QR — export / import the cipher words ======
+   The 12 words are a reusable membership key; this avoids retyping them.
+   Works on both grids (seal #encCipher, breach #decCipher). */
+const WORDS_QR_PREFIX = 'SSKW1:';
+function gridWordValues(gridId) {
+  return [...document.querySelectorAll('#' + gridId + ' input')].map(i => i.value.trim()).filter(Boolean);
+}
+function fillGridWords(gridId, words) {
+  const inputs = [...document.querySelectorAll('#' + gridId + ' input')];
+  inputs.forEach((inp, i) => { inp.value = words[i] || ''; });
+  document.getElementById(gridId)?.dispatchEvent(new Event('input', { bubbles: true })); // refresh strength/checkword
+}
+// SECURITY: the QR carries ONLY the LAST 6 of the 12 words — never the whole key.
+// The first 6 are typed from memory / a separate channel, so a stolen QR is useless.
+function exportWordsQr(gridId, hostId) {
+  if (currentMode() !== 'mil') return;
+  const inputs = [...document.querySelectorAll('#' + gridId + ' input')];
+  const last6 = inputs.slice(-6).map(i => i.value.trim());
+  if (last6.length < 6 || last6.some(w => !w)) return toast(t('toast.wordsNeedExport'), 'err', 'abort');
+  const host = $('#' + hostId);
+  const c = qrInkFor('words');
+  renderLinkQr(host, WORDS_QR_PREFIX + last6.join(' '), 132, c.ink, c.bg);
+  const cv = host.querySelector('canvas');
+  if (cv) { cv.style.cursor = 'pointer'; cv.title = t('words.saveHint'); cv.onclick = () => cv.toBlob((b) => downloadBlob(b, 'skystriker-words-last6-qr.png'), 'image/png'); }
+  toast(t('toast.wordsExported'), 'ok', 'copy');
+}
+function importWordsToGrid(gridId, text) {
+  if (currentMode() !== 'mil') return false;
+  text = (text || '').trim();
+  if (text.indexOf(QR_PREFIX) === 0) { toast(t('toast.qrIsPepperWords'), 'err', 'abort'); return false; }
+  const prefixed = text.indexOf(WORDS_QR_PREFIX) === 0;
+  const body = prefixed ? text.slice(WORDS_QR_PREFIX.length).trim() : text;
+  const words = body.split(/\s+/).filter(Boolean);
+  const plausible = words.length >= 2 && words.length <= 24 && words.every(w => /^[a-z'-]+$/i.test(w));
+  if (!prefixed && !plausible) { toast(t('toast.qrNoWords'), 'err', 'abort'); return false; }
+  // fill ONLY the last 6 slots; the first 6 stay for the user to type from memory.
+  const inputs = [...document.querySelectorAll('#' + gridId + ' input')];
+  const start = Math.max(0, inputs.length - 6);
+  const six = words.slice(-6);
+  six.forEach((w, k) => { if (inputs[start + k]) inputs[start + k].value = w; });
+  document.getElementById(gridId)?.dispatchEvent(new Event('input', { bubbles: true }));
+  inputs[0]?.focus();   // nudge the user to the first (typed) slot
+  toast(t('toast.wordsImported'), 'ok', 'extracted');
+  return true;
+}
+$('#encWordsExport')?.addEventListener('click', () => exportWordsQr('encCipher', 'encWordsQr'));
+$('#decWordsExport')?.addEventListener('click', () => exportWordsQr('decCipher', 'decWordsQr'));
+$('#encWordsCam')?.addEventListener('click', () => startQrCamera('#encWordsVideo', '#encWordsCamView', (txt) => importWordsToGrid('encCipher', txt)));
+$('#decWordsCam')?.addEventListener('click', () => startQrCamera('#decWordsVideo', '#decWordsCamView', (txt) => importWordsToGrid('decCipher', txt)));
+$('#encWordsImgInput')?.addEventListener('change', (e) => { const f = e.target.files?.[0]; if (f) scanQrImage(f, (txt) => importWordsToGrid('encCipher', txt)); e.target.value = ''; });
+$('#decWordsImgInput')?.addEventListener('change', (e) => { const f = e.target.files?.[0]; if (f) scanQrImage(f, (txt) => importWordsToGrid('decCipher', txt)); e.target.value = ''; });
 
 async function fetchCipherFromUrl(rawInput) {
   const trimmed = rawInput.trim();
