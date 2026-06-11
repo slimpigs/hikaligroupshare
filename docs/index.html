@@ -6702,6 +6702,11 @@ function armBundle(entries) {
     b64: e.cipher.replace(/\s+/g, ''),
   }));
 
+  // Order by filename (natural / numeric) so e.g. 1xx, 2xx … 10xx sort in name
+  // order — not by the bundle's arrival order (which looked size-ordered).
+  breachBundle.sort((a, b) =>
+    a.filename.localeCompare(b.filename, undefined, { numeric: true, sensitivity: 'base' }));
+
   // Auto-verify (same as single Breach): surface the embedded checkword from the
   // first v4/MIL entry so the checkword row verifies live as the recipient types.
   loadedCheckword = null;
